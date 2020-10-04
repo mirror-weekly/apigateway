@@ -16,7 +16,7 @@ func main() {
 		return
 	}
 
-	_ = usersrv.SetRoute(server.Engine)
+	_ = usersrv.SetRoute(server)
 
 	_ = server.Run()
 }
