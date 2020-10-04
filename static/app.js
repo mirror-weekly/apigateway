@@ -129,7 +129,7 @@ var signInWithPopup = function () {
 var handleSignedInUser = function (user) {
   console.log('user', user);
   console.log('IdToken', user.getIdToken());
-  user.getIdToken().then(function (accessToken) {
+  user.getIdToken(true).then(function (accessToken) {
     console.log('accessToken', accessToken);
   });
   document.getElementById('user-signed-in').style.display = 'block';
