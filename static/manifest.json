@@ -1,0 +1,13 @@
+{
+  "name": "Firebase Auth Demo",
+  "short_name": "Firebase Auth Demo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff",
+  "lang": "en-US",
+  "description": "FirebaseUI Auth application.",
+  "prefer_related_applications": false,
+  "theme_color": "#fff",
+  "scope": "/",
+  "orientation": "portrait-primary"
+}
