@@ -105,5 +105,153 @@ func SetRoute(server *Server) error {
 		c.JSON(http.StatusOK, user)
 	})
 
+	apiRouter.POST("/users", func(c *gin.Context) {
+		apiLogger := log.WithFields(log.Fields{
+			"path": c.FullPath(),
+		})
+
+		const BEARER_SCHEMA = "Bearer "
+		authHeader := c.GetHeader("Authorization")
+		idToken := authHeader[len(BEARER_SCHEMA):]
+
+		token, err := defaultClient.VerifyIDToken(c, idToken)
+		if err != nil {
+			apiLogger.Infof("error verifying ID token: %v", err)
+			// apiLogger.Infof("token: %v", idToken)
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		type User struct {
+			ID                    *int64
+			FirebaseId            string
+			Email                 string
+			Name                  *string
+			Nickname              *string
+			Bio                   *string
+			State                 int
+			Birthday              *time.Time
+			ImageId               *int64
+			Gender                int
+			Phone                 *string
+			AddressId             *int64
+			Point                 *int
+			CreatedAt             *time.Time
+			UpdatedAt             *time.Time
+			MembershipValidBefore *time.Time
+			MembershipType        int
+			MembershipValidAfter  *time.Time
+			CreatedByOperator     *int64
+		}
+
+		var user User
+
+		err = c.BindJSON(&user)
+
+		if err != nil {
+			apiLogger.Infof("user with firebase_id(%s) is not created: %v", token.Subject, err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		now := time.Now()
+
+		user.CreatedAt = &now
+		user.UpdatedAt = &now
+
+		// TODO move to server
+		db, err := NewDB()
+		if err != nil {
+			apiLogger.Infof("db open error: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		result := db.Create(&user)
+
+		if result.RowsAffected != 1 {
+			apiLogger.Infof("user with firebase_id(%s) is not created: %v", token.Subject, result.Error)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		c.Status(http.StatusOK)
+	})
+
+	apiRouter.PATCH("/users/:userID", func(c *gin.Context) {
+		apiLogger := log.WithFields(log.Fields{
+			"path": c.FullPath(),
+		})
+
+		const BEARER_SCHEMA = "Bearer "
+		authHeader := c.GetHeader("Authorization")
+		idToken := authHeader[len(BEARER_SCHEMA):]
+
+		token, err := defaultClient.VerifyIDToken(c, idToken)
+		if err != nil {
+			apiLogger.Infof("error verifying ID token: %v", err)
+			// apiLogger.Infof("token: %v", idToken)
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		firebaseID := c.Param("userID")
+
+		type User struct {
+			ID                    *int64
+			FirebaseId            string
+			Email                 string
+			Name                  *string
+			Nickname              *string
+			Bio                   *string
+			State                 int
+			Birthday              *time.Time
+			ImageId               *int64
+			Gender                int
+			Phone                 *string
+			AddressId             *int64
+			Point                 *int
+			CreatedAt             *time.Time
+			UpdatedAt             *time.Time
+			MembershipValidBefore *time.Time
+			MembershipType        int
+			MembershipValidAfter  *time.Time
+			CreatedByOperator     *int64
+		}
+
+		var user User
+
+		err = c.BindJSON(&user)
+
+		if err != nil {
+			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", token.Subject, err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		now := time.Now()
+
+		user.CreatedAt = &now
+		user.UpdatedAt = &now
+
+		// TODO move to server
+		db, err := NewDB()
+		if err != nil {
+			apiLogger.Infof("db open error: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		result := db.Model(&user).Where("firebase_id = ?", firebaseID).Updates(user)
+
+		if result.RowsAffected != 1 {
+			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", token.Subject, result.Error)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		c.Status(http.StatusOK)
+	})
+
 	return nil
 }
