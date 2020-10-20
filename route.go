@@ -13,7 +13,7 @@ import (
 
 const localfile = "/static"
 
-// Set sets the routing for the gin engine
+// SetRoute sets the routing for the gin engine
 func SetRoute(server *Server) error {
 
 	// Access Auth service from default app
@@ -32,9 +32,9 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const BEARER_SCHEMA = "Bearer "
+		const BearerSchema = "Bearer "
 		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BEARER_SCHEMA):]
+		idToken := authHeader[len(BearerSchema):]
 
 		token, err := defaultClient.VerifyIDToken(c, idToken)
 		if err != nil {
@@ -53,9 +53,9 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const BEARER_SCHEMA = "Bearer "
+		const BearerSchema = "Bearer "
 		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BEARER_SCHEMA):]
+		idToken := authHeader[len(BearerSchema):]
 
 		_, err := defaultClient.VerifyIDToken(c, idToken)
 		if err != nil {
@@ -69,17 +69,17 @@ func SetRoute(server *Server) error {
 
 		type User struct {
 			ID                    int64
-			FirebaseId            string
+			FirebaseID            string
 			Email                 string
 			Name                  *string
 			Nickname              *string
 			Bio                   *string
 			State                 int
 			Birthday              *time.Time
-			ImageId               int64
+			ImageID               int64
 			Gender                int
 			Phone                 *string
-			AddressId             int64
+			AddressID             int64
 			Point                 int
 			CreatedAt             time.Time
 			UpdatedAt             time.Time
@@ -110,9 +110,9 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const BEARER_SCHEMA = "Bearer "
+		const BearerSchema = "Bearer "
 		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BEARER_SCHEMA):]
+		idToken := authHeader[len(BearerSchema):]
 
 		token, err := defaultClient.VerifyIDToken(c, idToken)
 		if err != nil {
@@ -123,23 +123,23 @@ func SetRoute(server *Server) error {
 		}
 
 		type User struct {
-			ID                    *int64
-			FirebaseId            string
+			// ID                    *int64
+			FirebaseID            string
 			Email                 string
 			Name                  *string
 			Nickname              *string
 			Bio                   *string
 			State                 int
 			Birthday              *time.Time
-			ImageId               *int64
+			ImageID               *int64
 			Gender                int
 			Phone                 *string
-			AddressId             *int64
+			AddressID             *int64
 			Point                 *int
 			CreatedAt             *time.Time
 			UpdatedAt             *time.Time
 			MembershipValidBefore *time.Time
-			MembershipType        int
+			MembershipType        *int
 			MembershipValidAfter  *time.Time
 			CreatedByOperator     *int64
 		}
@@ -183,9 +183,9 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const BEARER_SCHEMA = "Bearer "
+		const BearerSchema = "Bearer "
 		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BEARER_SCHEMA):]
+		idToken := authHeader[len(BearerSchema):]
 
 		token, err := defaultClient.VerifyIDToken(c, idToken)
 		if err != nil {
@@ -199,17 +199,17 @@ func SetRoute(server *Server) error {
 
 		type User struct {
 			ID                    *int64
-			FirebaseId            string
+			FirebaseID            string
 			Email                 string
 			Name                  *string
 			Nickname              *string
 			Bio                   *string
 			State                 int
 			Birthday              *time.Time
-			ImageId               *int64
+			ImageID               *int64
 			Gender                int
 			Phone                 *string
-			AddressId             *int64
+			AddressID             *int64
 			Point                 *int
 			CreatedAt             *time.Time
 			UpdatedAt             *time.Time

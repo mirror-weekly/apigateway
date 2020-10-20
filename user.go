@@ -1,3 +1,4 @@
+// Package usersrv is the package containing the domain knowledge.
 package usersrv
 
 type User interface {
