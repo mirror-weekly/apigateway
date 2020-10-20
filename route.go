@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"firebase.google.com/go/v4/auth"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-contrib/static"
@@ -245,7 +246,6 @@ func SetRoute(server *Server) error {
 		token, err := firebaseClient.VerifyIDToken(c, idToken)
 		if err != nil {
 			apiLogger.Infof("error verifying ID token: %v", err)
-			// apiLogger.Infof("token: %v", idToken)
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
@@ -253,16 +253,14 @@ func SetRoute(server *Server) error {
 		firebaseID := c.Param("userID")
 
 		type User struct {
-			ID                    *int64
-			FirebaseID            string
-			Email                 string
+			Email                 *string
 			Name                  *string
 			Nickname              *string
 			Bio                   *string
-			State                 int
+			State                 *int
 			Birthday              *time.Time
 			ImageID               *int64
-			Gender                int
+			Gender                *int
 			Phone                 *string
 			AddressID             *int64
 			Point                 *int
@@ -277,17 +275,54 @@ func SetRoute(server *Server) error {
 		var user User
 
 		err = c.BindJSON(&user)
-
 		if err != nil {
 			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", token.Subject, err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
-		now := time.Now()
+		// Get user info from firebase
+		firebaseUser, err := firebaseClient.GetUser(c, firebaseID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		} else if firebaseUser == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]int{"state": UserStateMissingInProvider})
+			return
+		}
 
+		now := time.Now()
 		user.CreatedAt = &now
 		user.UpdatedAt = &now
+		firebaseUserToUpdate := &auth.UserToUpdate{}
+		if user.Email != nil {
+			*user.State = UserStateActivated
+
+			firebaseUserToUpdate.Email(*user.Email)
+		} else {
+			user.State = nil
+		}
+
+		if user.Name != nil {
+			firebaseUserToUpdate.DisplayName(*user.Name)
+		}
+
+		if user.Phone != nil {
+			firebaseUserToUpdate.PhoneNumber(*user.Phone)
+		}
+
+		// TODO Update image
+
+		_, err = firebaseClient.UpdateUser(
+			context.Background(),
+			firebaseID,
+			firebaseUserToUpdate,
+		)
+		if err != nil {
+			apiLogger.Errorf("error updating user: %v\n", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 
 		// TODO move to server
 		db, err := NewDB()
