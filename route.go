@@ -13,6 +13,14 @@ import (
 
 const localfile = "/static"
 
+const (
+	UserStateActivated              = 0x001
+	UserStateDisabled               = 0x002
+	UserStateMissingInProvider      = 0x010
+	UserStateMissingInMirrorMedia   = 0x200
+	UserStateRegistrationIncomplete = 0x300
+)
+
 // SetRoute sets the routing for the gin engine
 func SetRoute(server *Server) error {
 
@@ -53,14 +61,6 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const (
-			StateActivated              = 0x001
-			StateDisabled               = 0x002
-			StateMissingInProvider      = 0x010
-			StateMissingInMirrorMedia   = 0x200
-			StateRegistrationIncomplete = 0x300
-		)
-
 		firebaseID := c.Param("userID")
 
 		// Get user info from firebase
@@ -69,7 +69,7 @@ func SetRoute(server *Server) error {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		} else if firebaseUser == nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]int{"state": StateMissingInProvider})
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]int{"state": UserStateMissingInProvider})
 			return
 		}
 
@@ -92,11 +92,11 @@ func SetRoute(server *Server) error {
 
 		var stateToReturn int
 		if firebaseUser.Disabled {
-			stateToReturn = StateDisabled
+			stateToReturn = UserStateDisabled
 		} else if user.ID == nil {
-			stateToReturn = StateMissingInMirrorMedia
+			stateToReturn = UserStateMissingInMirrorMedia
 		} else if user.Email == nil || *user.Email == "" {
-			stateToReturn = StateRegistrationIncomplete
+			stateToReturn = UserStateRegistrationIncomplete
 		} else {
 			stateToReturn = *user.State
 		}
