@@ -12,9 +12,9 @@ import (
 )
 
 type Server struct {
-	conf   *config.Conf
-	Engine *gin.Engine
-	App    *firebase.App
+	conf        *config.Conf
+	Engine      *gin.Engine
+	FirebaseApp *firebase.App
 }
 
 func init() {
@@ -39,9 +39,9 @@ func NewServer(c config.Conf) (*Server, error) {
 	}
 
 	s := &Server{
-		conf:   &c,
-		Engine: engine,
-		App:    app,
+		conf:        &c,
+		Engine:      engine,
+		FirebaseApp: app,
 	}
 	return s, nil
 }

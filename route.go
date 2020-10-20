@@ -17,7 +17,7 @@ const localfile = "/static"
 func SetRoute(server *Server) error {
 
 	// Access Auth service from default app
-	defaultClient, err := server.App.Auth(context.Background())
+	firebaseClient, err := server.FirebaseApp.Auth(context.Background())
 	if err != nil {
 		log.Fatalf("error getting Auth client: %v", err)
 	}
@@ -36,7 +36,7 @@ func SetRoute(server *Server) error {
 		authHeader := c.GetHeader("Authorization")
 		idToken := authHeader[len(BearerSchema):]
 
-		token, err := defaultClient.VerifyIDToken(c, idToken)
+		token, err := firebaseClient.VerifyIDToken(c, idToken)
 		if err != nil {
 			apiLogger.Infof("error verifying ID token: %v", err)
 			// apiLogger.Infof("token: %v", idToken)
@@ -57,7 +57,7 @@ func SetRoute(server *Server) error {
 		authHeader := c.GetHeader("Authorization")
 		idToken := authHeader[len(BearerSchema):]
 
-		_, err := defaultClient.VerifyIDToken(c, idToken)
+		_, err := firebaseClient.VerifyIDToken(c, idToken)
 		if err != nil {
 			apiLogger.Infof("error verifying ID token: %v", err)
 			// apiLogger.Infof("token: %v", idToken)
@@ -114,7 +114,7 @@ func SetRoute(server *Server) error {
 		authHeader := c.GetHeader("Authorization")
 		idToken := authHeader[len(BearerSchema):]
 
-		token, err := defaultClient.VerifyIDToken(c, idToken)
+		token, err := firebaseClient.VerifyIDToken(c, idToken)
 		if err != nil {
 			apiLogger.Infof("error verifying ID token: %v", err)
 			// apiLogger.Infof("token: %v", idToken)
@@ -187,7 +187,7 @@ func SetRoute(server *Server) error {
 		authHeader := c.GetHeader("Authorization")
 		idToken := authHeader[len(BearerSchema):]
 
-		token, err := defaultClient.VerifyIDToken(c, idToken)
+		token, err := firebaseClient.VerifyIDToken(c, idToken)
 		if err != nil {
 			apiLogger.Infof("error verifying ID token: %v", err)
 			// apiLogger.Infof("token: %v", idToken)
