@@ -48,6 +48,61 @@ func SetRoute(server *Server) error {
 		c.Status(http.StatusOK)
 	})
 
+	apiRouter.GET("/users/:userID/attributes/state", func(c *gin.Context) {
+		apiLogger := log.WithFields(log.Fields{
+			"path": c.FullPath(),
+		})
+
+		const (
+			StateActivated              = 0x001
+			StateDisabled               = 0x002
+			StateMissingInProvider      = 0x010
+			StateMissingInMirrorMedia   = 0x200
+			StateRegistrationIncomplete = 0x300
+		)
+
+		firebaseID := c.Param("userID")
+
+		// Get user info from firebase
+		firebaseUser, err := firebaseClient.GetUser(c, firebaseID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		} else if firebaseUser == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]int{"state": StateMissingInProvider})
+			return
+		}
+
+		// Get user info from db
+
+		type User struct {
+			ID    *int
+			State *int
+			Email *string
+		}
+		// TODO move db to server
+		db, err := NewDB()
+		if err != nil {
+			apiLogger.Infof("db open error: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		var user User
+		db.Where("firebase_id = ?", firebaseID).First(&user)
+
+		var stateToReturn int
+		if firebaseUser.Disabled {
+			stateToReturn = StateDisabled
+		} else if user.ID == nil {
+			stateToReturn = StateMissingInMirrorMedia
+		} else if user.Email == nil || *user.Email == "" {
+			stateToReturn = StateRegistrationIncomplete
+		} else {
+			stateToReturn = *user.State
+		}
+		c.JSON(http.StatusOK, map[string]int{"state": stateToReturn})
+	})
+
 	apiRouter.GET("/users/:userID", func(c *gin.Context) {
 		apiLogger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
