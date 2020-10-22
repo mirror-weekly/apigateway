@@ -171,7 +171,6 @@ func SetRoute(server *Server) error {
 			UpdatedAt *time.Time `json:"-"`
 		}
 		type User struct {
-			// ID                    *int64
 			FirebaseID            *string
 			Email                 *string
 			Name                  *string
@@ -231,6 +230,35 @@ func SetRoute(server *Server) error {
 		}
 
 		c.Status(http.StatusOK)
+	})
+
+	apiRouter.DELETE("/users/:userID", func(c *gin.Context) {
+		apiLogger := log.WithFields(log.Fields{
+			"path": c.FullPath(),
+		})
+
+		firebaseID := c.Param("userID")
+		_, err := firebaseClient.UpdateUser(context.Background(), firebaseID, (&auth.UserToUpdate{}).Disabled(true))
+		if err != nil {
+			apiLogger.Infof("Disabling firebase_id(%s) failed: %v", firebaseID, err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		// TODO move to server
+		db, err := NewDB()
+		if err != nil {
+			apiLogger.Infof("db open error: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		type User struct {
+			State int
+		}
+
+		db.Model(&User{}).Where("firebase_id = ?", firebaseID).Update("state", UserStateDisabled)
+
 	})
 
 	apiRouter.PATCH("/users/:userID", func(c *gin.Context) {
