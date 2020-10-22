@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/mirror-media/usersrv"
 	"github.com/mirror-media/usersrv/config"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -16,7 +17,13 @@ func main() {
 		return
 	}
 
-	_ = usersrv.SetRoute(server)
+	err = usersrv.SetRoute(server)
+	if err != nil {
+		log.Fatalf("error setting up route: %v", err)
+	}
 
-	_ = server.Run()
+	err = server.Run()
+	if err != nil {
+		log.Fatalf("error runing server: %v", err)
+	}
 }
