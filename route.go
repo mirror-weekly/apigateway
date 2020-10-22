@@ -2,6 +2,7 @@ package usersrv
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -261,7 +262,7 @@ func SetRoute(server *Server) error {
 		_, err := firebaseClient.UpdateUser(context.Background(), firebaseID, (&auth.UserToUpdate{}).Disabled(true))
 		if err != nil {
 			apiLogger.Infof("Disabling firebase_id(%s) failed: %v", firebaseID, err)
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("Disabling firebase_id(%s) failed: %v", firebaseID, err)})
 			return
 		}
 
@@ -347,9 +348,6 @@ func SetRoute(server *Server) error {
 			return
 		}
 
-		now := time.Now()
-		user.CreatedAt = &now
-		user.UpdatedAt = &now
 		firebaseUserToUpdate := &auth.UserToUpdate{}
 		if user.Email != nil {
 			*user.State = UserStateActivated
@@ -376,7 +374,7 @@ func SetRoute(server *Server) error {
 		)
 		if err != nil {
 			apiLogger.Errorf("error updating user: %v\n", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("error updating firebase user: %v\n", err)})
 			return
 		}
 
