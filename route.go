@@ -234,6 +234,32 @@ func SetRoute(server *Server) error {
 			return
 		}
 
+		firebaseUserToUpdate := &auth.UserToUpdate{}
+		if user.Email != nil {
+			firebaseUserToUpdate.Email(*user.Email)
+		}
+
+		if user.Name != nil {
+			firebaseUserToUpdate.DisplayName(*user.Name)
+		}
+
+		if user.Phone != nil {
+			firebaseUserToUpdate.PhoneNumber(*user.Phone)
+		}
+
+		// TODO Update image
+
+		_, err = firebaseClient.UpdateUser(
+			context.Background(),
+			*user.FirebaseID,
+			firebaseUserToUpdate,
+		)
+		if err != nil {
+			apiLogger.Errorf("error updating firebase user: %v\n", err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("error updating firebase user: %v\n", err)})
+			return
+		}
+
 		// TODO move to server
 		db, err := NewDB()
 		if err != nil {
