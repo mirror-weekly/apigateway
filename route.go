@@ -268,6 +268,24 @@ func SetRoute(server *Server) error {
 
 		firebaseID := c.Param("userID")
 
+		type Address struct {
+			ID            *int64 `json:"-"`
+			Nationality   *string
+			State         *string
+			City          *string
+			ZipCode       *string
+			District      *string
+			StreetAddress *string
+			CreatedAt     *time.Time `json:"-"`
+			UpdatedAt     *time.Time `json:"-"`
+		}
+
+		type Image struct {
+			ID        *int64 `json:"-"`
+			URL       *string
+			CreatedAt *time.Time `json:"-"`
+			UpdatedAt *time.Time `json:"-"`
+		}
 		type User struct {
 			Email                 *string
 			Name                  *string
@@ -275,13 +293,15 @@ func SetRoute(server *Server) error {
 			Bio                   *string
 			State                 *int
 			Birthday              *time.Time
-			ImageID               *int64
+			ImageID               *int64 `json:"-"`
+			Image                 *Image
 			Gender                *int
 			Phone                 *string
-			AddressID             *int64
+			AddressID             *int64 `json:"-"`
+			Address               *Address
 			Point                 *int
-			CreatedAt             *time.Time
-			UpdatedAt             *time.Time
+			CreatedAt             *time.Time `json:"-"`
+			UpdatedAt             *time.Time `json:"-"`
 			MembershipValidBefore *time.Time
 			MembershipType        *int
 			MembershipValidAfter  *time.Time
