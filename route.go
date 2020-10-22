@@ -107,18 +107,6 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const BearerSchema = "Bearer "
-		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BearerSchema):]
-
-		_, err := firebaseClient.VerifyIDToken(c, idToken)
-		if err != nil {
-			apiLogger.Infof("error verifying ID token: %v", err)
-			// apiLogger.Infof("token: %v", idToken)
-			c.AbortWithStatus(http.StatusForbidden)
-			return
-		}
-
 		firebaseID := c.Param("userID")
 
 		type User struct {
@@ -164,22 +152,10 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
-		const BearerSchema = "Bearer "
-		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BearerSchema):]
-
-		token, err := firebaseClient.VerifyIDToken(c, idToken)
-		if err != nil {
-			apiLogger.Infof("error verifying ID token: %v", err)
-			// apiLogger.Infof("token: %v", idToken)
-			c.AbortWithStatus(http.StatusForbidden)
-			return
-		}
-
 		type User struct {
 			// ID                    *int64
-			FirebaseID            string
-			Email                 string
+			FirebaseID            *string
+			Email                 *string
 			Name                  *string
 			Nickname              *string
 			Bio                   *string
@@ -201,9 +177,19 @@ func SetRoute(server *Server) error {
 		var user User
 
 		err = c.BindJSON(&user)
-
 		if err != nil {
-			apiLogger.Infof("user with firebase_id(%s) is not created: %v", token.Subject, err)
+			apiLogger.Infof("parsing error: %v", err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		// validate user
+		if user.FirebaseID == nil {
+			apiLogger.Info("firebase_id isn't provided")
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		} else if user.Email == nil {
+			apiLogger.Infof("email is not provided for firebase_id(%s)", *user.FirebaseID)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -224,7 +210,7 @@ func SetRoute(server *Server) error {
 		result := db.Create(&user)
 
 		if result.RowsAffected != 1 {
-			apiLogger.Infof("user with firebase_id(%s) is not created: %v", token.Subject, result.Error)
+			apiLogger.Infof("user with firebase_id(%s) is not created: %v", *user.FirebaseID, result.Error)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -236,17 +222,6 @@ func SetRoute(server *Server) error {
 		apiLogger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
 		})
-
-		const BearerSchema = "Bearer "
-		authHeader := c.GetHeader("Authorization")
-		idToken := authHeader[len(BearerSchema):]
-
-		token, err := firebaseClient.VerifyIDToken(c, idToken)
-		if err != nil {
-			apiLogger.Infof("error verifying ID token: %v", err)
-			c.AbortWithStatus(http.StatusForbidden)
-			return
-		}
 
 		firebaseID := c.Param("userID")
 
@@ -274,7 +249,7 @@ func SetRoute(server *Server) error {
 
 		err = c.BindJSON(&user)
 		if err != nil {
-			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", token.Subject, err)
+			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", firebaseID, err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -333,7 +308,7 @@ func SetRoute(server *Server) error {
 		result := db.Model(&user).Where("firebase_id = ?", firebaseID).Updates(user)
 
 		if result.RowsAffected != 1 {
-			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", token.Subject, result.Error)
+			apiLogger.Infof("user with firebase_id(%s) is not updated: %v", firebaseID, result.Error)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
