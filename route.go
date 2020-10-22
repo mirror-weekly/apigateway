@@ -67,9 +67,7 @@ func SetRoute(server *Server) error {
 		// Get user info from firebase
 		firebaseUser, err := firebaseClient.GetUser(c, firebaseID)
 		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		} else if firebaseUser == nil {
+			apiLogger.Infof("firebase get user(%s) error: %v", firebaseID, err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]int{"state": UserStateMissingInProvider})
 			return
 		}
