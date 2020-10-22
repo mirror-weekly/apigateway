@@ -109,26 +109,45 @@ func SetRoute(server *Server) error {
 
 		firebaseID := c.Param("userID")
 
+		type Address struct {
+			ID            *int64     `json:"-"`
+			Nationality   *string    `json:",omitempty"`
+			State         *string    `json:",omitempty"`
+			City          *string    `json:",omitempty"`
+			ZipCode       *string    `json:",omitempty"`
+			District      *string    `json:",omitempty"`
+			StreetAddress *string    `json:",omitempty"`
+			CreatedAt     *time.Time `json:",omitempty"`
+			UpdatedAt     *time.Time `json:",omitempty"`
+		}
+
+		type Image struct {
+			ID        *int64     `json:"-"`
+			URL       *string    `json:",omitempty"`
+			CreatedAt *time.Time `json:",omitempty"`
+			UpdatedAt *time.Time `json:",omitempty"`
+		}
 		type User struct {
-			ID                    int64
-			FirebaseID            string
-			Email                 string
-			Name                  *string
-			Nickname              *string
-			Bio                   *string
-			State                 int
-			Birthday              *time.Time
-			ImageID               int64
-			Gender                int
-			Phone                 *string
-			AddressID             int64
-			Point                 int
-			CreatedAt             time.Time
-			UpdatedAt             time.Time
-			MembershipValidBefore *time.Time
-			MembershipType        int
-			MembershipValidAfter  *time.Time
-			CreatedByOperator     int64
+			FirebaseID            *string
+			Email                 *string
+			Name                  *string    `json:",omitempty"`
+			Nickname              *string    `json:",omitempty"`
+			Bio                   *string    `json:",omitempty"`
+			State                 *int       `json:",omitempty"`
+			Birthday              *time.Time `json:",omitempty"`
+			ImageID               *int64     `json:"-"`
+			Image                 *Image     `json:",omitempty"`
+			Gender                *int       `json:",omitempty"`
+			Phone                 *string    `json:",omitempty"`
+			AddressID             *int64     `json:"-"`
+			Address               *Address   `json:",omitempty"`
+			Point                 *int       `json:",omitempty"`
+			CreatedAt             *time.Time `json:",omitempty"`
+			UpdatedAt             *time.Time `json:",omitempty"`
+			MembershipValidBefore *time.Time `json:",omitempty"`
+			MembershipType        *int       `json:",omitempty"`
+			MembershipValidAfter  *time.Time `json:",omitempty"`
+			CreatedByOperator     *int64     `json:",omitempty"`
 		}
 
 		db, err := NewDB()
@@ -138,9 +157,10 @@ func SetRoute(server *Server) error {
 			return
 		}
 		var user User
-		db.Where("firebase_id = ?", firebaseID).First(&user)
+		db.Joins("Image").Joins("Address").Where("firebase_id = ?", firebaseID).First(&user)
 		apiLogger.Infof("firebase_id(%s):%+v", firebaseID, user)
-		if user.ID == 0 {
+		apiLogger.Infof("firebase_id(%s)Image:%+v", firebaseID, user.Image)
+		if user.FirebaseID == nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
