@@ -152,6 +152,24 @@ func SetRoute(server *Server) error {
 			"path": c.FullPath(),
 		})
 
+		type Address struct {
+			ID            *int64 `json:"-"`
+			Nationality   *string
+			State         *string
+			City          *string
+			ZipCode       *string
+			District      *string
+			StreetAddress *string
+			CreatedAt     *time.Time `json:"-"`
+			UpdatedAt     *time.Time `json:"-"`
+		}
+
+		type Image struct {
+			ID        *int64 `json:"-"`
+			URL       *string
+			CreatedAt *time.Time `json:"-"`
+			UpdatedAt *time.Time `json:"-"`
+		}
 		type User struct {
 			// ID                    *int64
 			FirebaseID            *string
@@ -159,15 +177,17 @@ func SetRoute(server *Server) error {
 			Name                  *string
 			Nickname              *string
 			Bio                   *string
-			State                 int
+			State                 *int
 			Birthday              *time.Time
-			ImageID               *int64
-			Gender                int
+			ImageID               *int64 `json:"-"`
+			Image                 *Image
+			Gender                *int
 			Phone                 *string
-			AddressID             *int64
+			AddressID             *int64 `json:"-"`
+			Address               *Address
 			Point                 *int
-			CreatedAt             *time.Time
-			UpdatedAt             *time.Time
+			CreatedAt             *time.Time `json:"-"`
+			UpdatedAt             *time.Time `json:"-"`
 			MembershipValidBefore *time.Time
 			MembershipType        *int
 			MembershipValidAfter  *time.Time
@@ -193,11 +213,6 @@ func SetRoute(server *Server) error {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-
-		now := time.Now()
-
-		user.CreatedAt = &now
-		user.UpdatedAt = &now
 
 		// TODO move to server
 		db, err := NewDB()
@@ -240,7 +255,7 @@ func SetRoute(server *Server) error {
 			CreatedAt             *time.Time
 			UpdatedAt             *time.Time
 			MembershipValidBefore *time.Time
-			MembershipType        int
+			MembershipType        *int
 			MembershipValidAfter  *time.Time
 			CreatedByOperator     *int64
 		}
