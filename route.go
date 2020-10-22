@@ -15,11 +15,11 @@ import (
 const localfile = "/static"
 
 const (
-	UserStateActivated              = 0x001
-	UserStateDisabled               = 0x002
-	UserStateMissingInProvider      = 0x010
-	UserStateMissingInMirrorMedia   = 0x200
-	UserStateRegistrationIncomplete = 0x300
+	UserStateActivated              = 200
+	UserStateDisabled               = 100
+	UserStateMissingInProvider      = 300
+	UserStateMissingInMirrorMedia   = 401
+	UserStateRegistrationIncomplete = 402
 )
 
 // SetRoute sets the routing for the gin engine
