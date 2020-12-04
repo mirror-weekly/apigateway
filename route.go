@@ -1,4 +1,4 @@
-package usersrv
+package apigateway
 
 import (
 	"context"

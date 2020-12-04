@@ -1,5 +1,5 @@
-// Package usersrv is the package containing the domain knowledge.
-package usersrv
+// package apigateway is the package containing the domain knowledge.
+package apigateway
 
 type User interface {
 	IsSignedIn() (bool, error)
