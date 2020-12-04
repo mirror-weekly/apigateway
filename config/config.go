@@ -9,9 +9,10 @@ import (
 )
 
 type Conf struct {
-	Address               string
-	Port                  int
-	V0RESTfulSrvTargetUrl string
+	Address                    string
+	FirebaseCredentialFilePath string
+	Port                       int
+	V0RESTfulSrvTargetUrl      string
 }
 
 func (c *Conf) Valid() bool {

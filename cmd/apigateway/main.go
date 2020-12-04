@@ -8,10 +8,12 @@ import (
 
 func main() {
 
+	// TODO move configs to external config file
 	cfg := config.Conf{
-		Address:               "0.0.0.0",
-		Port:                  8080,
-		V0RESTfulSrvTargetUrl: "http://104.199.190.189:8080",
+		Address:                    "0.0.0.0",
+		FirebaseCredentialFilePath: "./firebaseCredential.json",
+		Port:                       8080,
+		V0RESTfulSrvTargetUrl:      "http://104.199.190.189:8080",
 	}
 	server, err := apigateway.NewServer(cfg)
 	if err != nil {

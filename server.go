@@ -26,13 +26,11 @@ func (s *Server) Run() error {
 	return s.Engine.Run(fmt.Sprintf("%s:%d", s.conf.Address, s.conf.Port))
 }
 
-const firebaseCredentialFile = ""
-
 func NewServer(c config.Conf) (*Server, error) {
 
 	engine := gin.Default()
 
-	opt := option.WithCredentialsFile(firebaseCredentialFile)
+	opt := option.WithCredentialsFile(c.FirebaseCredentialFilePath)
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing app: %v", err)
