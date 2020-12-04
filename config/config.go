@@ -9,8 +9,9 @@ import (
 )
 
 type Conf struct {
-	Address string
-	Port    int
+	Address               string
+	Port                  int
+	V0RESTfulSrvTargetUrl string
 }
 
 func (c *Conf) Valid() bool {

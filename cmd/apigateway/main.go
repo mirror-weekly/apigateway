@@ -1,23 +1,24 @@
 package main
 
 import (
-	"github.com/mirror-media/usersrv"
-	"github.com/mirror-media/usersrv/config"
+	"github.com/mirror-media/apigateway"
+	"github.com/mirror-media/apigateway/config"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 
 	cfg := config.Conf{
-		Address: "0.0.0.0",
-		Port:    80,
+		Address:               "0.0.0.0",
+		Port:                  8080,
+		V0RESTfulSrvTargetUrl: "http://104.199.190.189:8080",
 	}
-	server, err := usersrv.NewServer(cfg)
+	server, err := apigateway.NewServer(cfg)
 	if err != nil {
 		return
 	}
 
-	err = usersrv.SetRoute(server)
+	err = apigateway.SetRoute(server)
 	if err != nil {
 		log.Fatalf("error setting up route: %v", err)
 	}
