@@ -1,0 +1,572 @@
+type Query {
+  allProfile: [ProfileType]
+  me: UserNode
+
+  """The ID of the object"""
+  user(id: ID!): UserNode
+  users(before: String, after: String, first: Int, last: Int, email: String, username: String, username_Icontains: String, username_Istartswith: String, isActive: Boolean, status_Archived: Boolean, status_Verified: Boolean, status_SecondaryEmail: String): UserNodeConnection
+}
+
+type ProfileType {
+  """"""
+  user: UserType!
+
+  """"""
+  bio: String!
+
+  """"""
+  phoneNumber: String!
+}
+
+type UserType {
+  """"""
+  id: ID!
+
+  """"""
+  lastLogin: DateTime
+
+  """必要的。150 個字或更少，只包含字母、數字和 @/./+/-/_。"""
+  username: String!
+
+  """"""
+  email: String!
+
+  """"""
+  dateJoined: DateTime!
+}
+
+"""
+The `DateTime` scalar type represents a DateTime
+value as specified by
+[iso8601](https://en.wikipedia.org/wiki/ISO_8601).
+"""
+scalar DateTime
+
+type UserNode implements Node {
+  """The ID of the object."""
+  id: ID!
+
+  """"""
+  lastLogin: DateTime
+
+  """必要的。150 個字或更少，只包含字母、數字和 @/./+/-/_。"""
+  username: String!
+
+  """"""
+  firstName: String!
+
+  """"""
+  lastName: String!
+
+  """"""
+  email: String!
+
+  """指定是否使用者可以登入此管理網站。"""
+  isStaff: Boolean!
+
+  """指定使用者是否有效。請取消選擇而不是刪除帳號。"""
+  isActive: Boolean!
+
+  """"""
+  dateJoined: DateTime!
+
+  """"""
+  name: String
+
+  """"""
+  gender: CustomUserGender!
+
+  """"""
+  phone: String
+
+  """"""
+  birthday: Date!
+
+  """"""
+  address: String
+  profile: ProfileType
+  pk: Int
+  archived: Boolean
+  verified: Boolean
+  secondaryEmail: String
+}
+
+"""An object with an ID"""
+interface Node {
+  """The ID of the object."""
+  id: ID!
+}
+
+"""An enumeration."""
+enum CustomUserGender {
+  """male"""
+  A_1
+
+  """female"""
+  A_2
+
+  """Not provided"""
+  A_0
+}
+
+"""
+The `Date` scalar type represents a Date
+value as specified by
+[iso8601](https://en.wikipedia.org/wiki/ISO_8601).
+"""
+scalar Date
+
+type UserNodeConnection {
+  """Pagination data for this connection."""
+  pageInfo: PageInfo!
+
+  """Contains the nodes in this connection."""
+  edges: [UserNodeEdge]!
+}
+
+"""
+The Relay compliant `PageInfo` type, containing data necessary to paginate this connection.
+"""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: String
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: String
+}
+
+"""A Relay edge containing a `UserNode` and its cursor."""
+type UserNodeEdge {
+  """The item at the end of the edge"""
+  node: UserNode
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+type Mutation {
+  profile: ProfileType
+
+  """
+  Register user with fields defined in the settings.
+  
+  If the email field of the user model is part of the
+  registration fields (default), check if there is
+  no user with that email or as a secondary email.
+  
+  If it exists, it does not register the user,
+  even if the email field is not defined as unique
+  (default of the default django user model).
+  
+  When creating the user, it also creates a `UserStatus`
+  related to that user, making it possible to track
+  if the user is archived, verified and has a secondary
+  email.
+  
+  Send account verification email.
+  
+  If allowed to not verified users login, return token.
+  """
+  register(email: String!, username: String!, password1: String!, password2: String!): Register
+
+  """
+  Verify user account.
+  
+  Receive the token that was sent by email.
+  If the token is valid, make the user verified
+  by making the `user.status.verified` field true.
+  """
+  verifyAccount(token: String!): VerifyAccount
+
+  """
+  Sends activation email.
+  
+  It is called resend because theoretically
+  the first activation email was sent when
+  the user registered.
+  
+  If there is no user with the requested email,
+  a successful response is returned.
+  """
+  resendActivationEmail(email: String!): ResendActivationEmail
+
+  """
+  Send password reset email.
+  
+  For non verified users, send an activation
+  email instead.
+  
+  Accepts both primary and secondary email.
+  
+  If there is no user with the requested email,
+  a successful response is returned.
+  """
+  sendPasswordResetEmail(email: String!): SendPasswordResetEmail
+
+  """
+  Change user password without old password.
+  
+  Receive the token that was sent by email.
+  
+  If token and new passwords are valid, update
+  user password and in case of using refresh
+  tokens, revoke all of them.
+  
+  Also, if user has not been verified yet, verify it.
+  """
+  passwordReset(token: String!, newPassword1: String!, newPassword2: String!): PasswordReset
+
+  """
+  Set user password - for passwordless registration
+  
+  Receive the token that was sent by email.
+  
+  If token and new passwords are valid, set
+  user password and in case of using refresh
+  tokens, revoke all of them.
+  
+  Also, if user has not been verified yet, verify it.
+  """
+  passwordSet(token: String!, newPassword1: String!, newPassword2: String!): PasswordSet
+
+  """
+  Change account password when user knows the old password.
+  
+  A new token and refresh token are sent. User must be verified.
+  """
+  passwordChange(oldPassword: String!, newPassword1: String!, newPassword2: String!): PasswordChange
+
+  """
+  Archive account and revoke refresh tokens.
+  
+  User must be verified and confirm password.
+  """
+  archiveAccount(password: String!): ArchiveAccount
+  deleteAccount(id: String!): DeleteUpdate
+
+  """
+  Update user model fields, defined on settings.
+  
+  User must be verified.
+  """
+  updateAccount(firstName: String, lastName: String): UpdateAccount
+
+  """
+  Send activation to secondary email.
+  
+  User must be verified and confirm password.
+  """
+  sendSecondaryEmailActivation(email: String!, password: String!): SendSecondaryEmailActivation
+
+  """
+  Verify user secondary email.
+  
+  Receive the token that was sent by email.
+  User is already verified when using this mutation.
+  
+  If the token is valid, add the secondary email
+  to `user.status.secondary_email` field.
+  
+  Note that until the secondary email is verified,
+  it has not been saved anywhere beyond the token,
+  so it can still be used to create a new account.
+  After being verified, it will no longer be available.
+  """
+  verifySecondaryEmail(token: String!): VerifySecondaryEmail
+
+  """
+  Swap between primary and secondary emails.
+  
+  Require password confirmation.
+  """
+  swapEmails(password: String!): SwapEmails
+
+  """
+  Obtain JSON web token for given user.
+  
+  Allow to perform login with different fields,
+  and secondary email if set. The fields are
+  defined on settings.
+  
+  Not verified users can login by default. This
+  can be changes on settings.
+  
+  If user is archived, make it unarchive and
+  return `unarchiving=True` on output.
+  """
+  tokenAuth(password: String!, email: String, username: String): ObtainJSONWebToken
+
+  """Same as `grapgql_jwt` implementation, with standard output."""
+  verifyToken(token: String!): VerifyToken
+
+  """Same as `grapgql_jwt` implementation, with standard output."""
+  refreshToken(refreshToken: String!): RefreshToken
+
+  """Same as `grapgql_jwt` implementation, with standard output."""
+  revokeToken(refreshToken: String!): RevokeToken
+}
+
+"""
+Register user with fields defined in the settings.
+
+If the email field of the user model is part of the
+registration fields (default), check if there is
+no user with that email or as a secondary email.
+
+If it exists, it does not register the user,
+even if the email field is not defined as unique
+(default of the default django user model).
+
+When creating the user, it also creates a `UserStatus`
+related to that user, making it possible to track
+if the user is archived, verified and has a secondary
+email.
+
+Send account verification email.
+
+If allowed to not verified users login, return token.
+"""
+type Register {
+  success: Boolean
+  errors: ExpectedErrorType
+  refreshToken: String
+  token: String
+}
+
+"""
+
+    Errors messages and codes mapped to
+    fields or non fields errors.
+    Example:
+    {
+        field_name: [
+            {
+                "message": "error message",
+                "code": "error_code"
+            }
+        ],
+        other_field: [
+            {
+                "message": "error message",
+                "code": "error_code"
+            }
+        ],
+        nonFieldErrors: [
+            {
+                "message": "error message",
+                "code": "error_code"
+            }
+        ]
+    }
+    
+"""
+scalar ExpectedErrorType
+
+"""
+Verify user account.
+
+Receive the token that was sent by email.
+If the token is valid, make the user verified
+by making the `user.status.verified` field true.
+"""
+type VerifyAccount {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Sends activation email.
+
+It is called resend because theoretically
+the first activation email was sent when
+the user registered.
+
+If there is no user with the requested email,
+a successful response is returned.
+"""
+type ResendActivationEmail {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Send password reset email.
+
+For non verified users, send an activation
+email instead.
+
+Accepts both primary and secondary email.
+
+If there is no user with the requested email,
+a successful response is returned.
+"""
+type SendPasswordResetEmail {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Change user password without old password.
+
+Receive the token that was sent by email.
+
+If token and new passwords are valid, update
+user password and in case of using refresh
+tokens, revoke all of them.
+
+Also, if user has not been verified yet, verify it.
+"""
+type PasswordReset {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Set user password - for passwordless registration
+
+Receive the token that was sent by email.
+
+If token and new passwords are valid, set
+user password and in case of using refresh
+tokens, revoke all of them.
+
+Also, if user has not been verified yet, verify it.
+"""
+type PasswordSet {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Change account password when user knows the old password.
+
+A new token and refresh token are sent. User must be verified.
+"""
+type PasswordChange {
+  success: Boolean
+  errors: ExpectedErrorType
+  refreshToken: String
+  token: String
+}
+
+"""
+Archive account and revoke refresh tokens.
+
+User must be verified and confirm password.
+"""
+type ArchiveAccount {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+type DeleteUpdate {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Update user model fields, defined on settings.
+
+User must be verified.
+"""
+type UpdateAccount {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Send activation to secondary email.
+
+User must be verified and confirm password.
+"""
+type SendSecondaryEmailActivation {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Verify user secondary email.
+
+Receive the token that was sent by email.
+User is already verified when using this mutation.
+
+If the token is valid, add the secondary email
+to `user.status.secondary_email` field.
+
+Note that until the secondary email is verified,
+it has not been saved anywhere beyond the token,
+so it can still be used to create a new account.
+After being verified, it will no longer be available.
+"""
+type VerifySecondaryEmail {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Swap between primary and secondary emails.
+
+Require password confirmation.
+"""
+type SwapEmails {
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+Obtain JSON web token for given user.
+
+Allow to perform login with different fields,
+and secondary email if set. The fields are
+defined on settings.
+
+Not verified users can login by default. This
+can be changes on settings.
+
+If user is archived, make it unarchive and
+return `unarchiving=True` on output.
+"""
+type ObtainJSONWebToken {
+  token: String
+  success: Boolean
+  errors: ExpectedErrorType
+  user: UserNode
+  unarchiving: Boolean
+  refreshToken: String
+}
+
+"""Same as `grapgql_jwt` implementation, with standard output."""
+type VerifyToken {
+  payload: GenericScalar
+  success: Boolean
+  errors: ExpectedErrorType
+}
+
+"""
+The `GenericScalar` scalar type represents a generic
+GraphQL scalar value that could be:
+String, Boolean, Int, Float, List or Object.
+"""
+scalar GenericScalar
+
+"""Same as `grapgql_jwt` implementation, with standard output."""
+type RefreshToken {
+  token: String
+  payload: GenericScalar
+  success: Boolean
+  errors: ExpectedErrorType
+  refreshToken: String
+}
+
+"""Same as `grapgql_jwt` implementation, with standard output."""
+type RevokeToken {
+  revoked: Int
+  success: Boolean
+  errors: ExpectedErrorType
+}

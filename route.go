@@ -2,6 +2,7 @@ package apigateway
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +14,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/mirror-media/apigateway/graph"
+	"github.com/mirror-media/apigateway/graph/generated"
 )
 
 const localfile = "/Users/chiu/dev/mm/usersrv/static"
@@ -54,6 +59,60 @@ func SetIDTokenStateOnly(server *Server) gin.HandlerFunc {
 			return
 		}
 		c.Set("IDTokenState", "OK")
+	}
+}
+
+// VerifyIDToken is a middleware to authenticate the request and save the result to the context
+func VerifyIDToken(server *Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		logger := log.WithFields(log.Fields{
+			"path": c.FullPath(),
+		})
+		const BearerSchema = "Bearer "
+		authHeader := c.GetHeader("Authorization")
+
+		// exit if token is not valid
+		if !strings.HasPrefix(authHeader, BearerSchema) {
+			c.Set("IDTokenState", "Not a Bearer token")
+			c.AbortWithStatusJSON(http.StatusForbidden, Reply{
+				TokenState: "Not a Bearer token",
+			})
+			return
+		}
+		idToken := authHeader[len(BearerSchema):]
+		// Token Verifycation
+		firebaseClient := server.FirebaseClient
+		// Verify IDToken
+		// exit if it's not valid
+		cCtx := c.Copy()
+		token, err := firebaseClient.VerifyIDTokenAndCheckRevoked(cCtx, idToken)
+		if err != nil {
+			logger.Printf("error verifying ID token: %v\n", err)
+			c.Set("IDTokenState", err.Error())
+			c.AbortWithStatusJSON(http.StatusForbidden, Reply{
+				TokenState: err.Error(),
+			})
+			return
+		}
+
+		c.Set("IDTokenState", "OK")
+		c.Set("UserID", token.Subject)
+	}
+}
+
+func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), "GinContextKey", c)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
+func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), "FirebaseClient", server.FirebaseClient)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
 	}
 }
 
@@ -172,6 +231,11 @@ func SetRoute(server *Server) error {
 	})
 
 	// Private API
+	// v1 User
+	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(VerifyIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	v1TokenAuthenticatedWithFirebaseRouter.POST("/graphql/user", gin.WrapH(srv))
+
 	// v0 api proxy every request to the restful serverce
 	v0Router := apiRouter.Group("/v0")
 	v0tokenStateRouter := v0Router.Use(SetIDTokenStateOnly(server))
