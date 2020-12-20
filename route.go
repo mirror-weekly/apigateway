@@ -45,9 +45,10 @@ func SetIDTokenStateOnly(server *Server) gin.HandlerFunc {
 		firebaseClient := server.FirebaseClient
 
 		// Verify IDToken is valid
-		_, err = firebaseClient.VerifyIDTokenAndCheckRevoked(cCtx, idToken)
+		cCtx := c.Copy()
+		token, err := firebaseClient.VerifyIDTokenAndCheckRevoked(cCtx, idToken)
 		if err != nil {
-			log.Printf("error verifying ID token: %v\n", err)
+			logger.Printf("error verifying ID token: %v\n", err)
 			c.Set("IDTokenState", err.Error())
 			c.Next()
 			return
