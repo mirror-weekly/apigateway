@@ -26,8 +26,8 @@ const (
 	UserStateRefreshTokenRevoked    = 501
 )
 
-// setIDTokenStateOnly is a middleware to verify to idToken and save the result to the context
-func setIDTokenStateOnly(server *Server) gin.HandlerFunc {
+// SetIDTokenStateOnly is a middleware to verify to idToken and save the result to the context
+func SetIDTokenStateOnly(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -159,9 +159,10 @@ type Reply struct {
 func SetRoute(server *Server) error {
 	apiRouter := server.Engine.Group("/api")
 
+	// Public API
 	// v1 api
 	v1Router := apiRouter.Group("/v1")
-	v1tokenStateRouter := v1Router.Use(setIDTokenStateOnly(server))
+	v1tokenStateRouter := v1Router.Use(SetIDTokenStateOnly(server))
 	v1tokenStateRouter.GET("/tokenState", func(c *gin.Context) {
 		state, _ := c.Get("IDTokenState")
 		c.JSON(http.StatusOK, Reply{
@@ -169,9 +170,10 @@ func SetRoute(server *Server) error {
 		})
 	})
 
+	// Private API
 	// v0 api proxy every request to the restful serverce
 	v0Router := apiRouter.Group("/v0")
-	v0tokenStateRouter := v0Router.Use(setIDTokenStateOnly(server))
+	v0tokenStateRouter := v0Router.Use(SetIDTokenStateOnly(server))
 	proxyURL, err := url.Parse(server.conf.V0RESTfulSrvTargetUrl)
 	if err != nil {
 		return err
