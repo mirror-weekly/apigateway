@@ -34,6 +34,7 @@ func setIDTokenStateOnly(server *Server) gin.HandlerFunc {
 		})
 		const BearerSchema = "Bearer "
 		authHeader := c.GetHeader("Authorization")
+
 		if !strings.HasPrefix(authHeader, BearerSchema) {
 			c.Set("IDTokenState", "Not a Bearer token")
 			c.Next()
@@ -41,13 +42,8 @@ func setIDTokenStateOnly(server *Server) gin.HandlerFunc {
 		}
 		idToken := authHeader[len(BearerSchema):]
 		// verify IfToken
-		cCtx := c.Copy()
-		firebaseClient, err := server.FirebaseApp.Auth(cCtx)
-		if err != nil {
-			logger.Errorf("initialization of Firebase Auth Client encountered error: %s", err.Error())
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
+		firebaseClient := server.FirebaseClient
+
 		// Verify IDToken is valid
 		_, err = firebaseClient.VerifyIDTokenAndCheckRevoked(cCtx, idToken)
 		if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/mirror-media/apigateway/config"
 	log "github.com/sirupsen/logrus"
@@ -12,9 +13,10 @@ import (
 )
 
 type Server struct {
-	conf        *config.Conf
-	Engine      *gin.Engine
-	FirebaseApp *firebase.App
+	conf           *config.Conf
+	Engine         *gin.Engine
+	FirebaseApp    *firebase.App
+	FirebaseClient *auth.Client
 }
 
 func init() {
@@ -36,10 +38,16 @@ func NewServer(c config.Conf) (*Server, error) {
 		return nil, fmt.Errorf("error initializing app: %v", err)
 	}
 
+	firebaseClient, err := app.Auth(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("initialization of Firebase Auth Client encountered error: %s", err.Error())
+	}
+
 	s := &Server{
-		conf:        &c,
-		Engine:      engine,
-		FirebaseApp: app,
+		conf:           &c,
+		Engine:         engine,
+		FirebaseApp:    app,
+		FirebaseClient: firebaseClient,
 	}
 	return s, nil
 }
