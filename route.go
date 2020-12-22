@@ -74,8 +74,8 @@ func VerifyIDToken(server *Server) gin.HandlerFunc {
 		// exit if token is not valid
 		if !strings.HasPrefix(authHeader, BearerSchema) {
 			c.Set("IDTokenState", "Not a Bearer token")
-			c.AbortWithStatusJSON(http.StatusForbidden, Reply{
-				TokenState: "Not a Bearer token",
+			c.AbortWithStatusJSON(http.StatusForbidden, ErrorReply{
+				Errors: []Error{{Message: "Not a Bearer token"}},
 			})
 			return
 		}
@@ -89,8 +89,8 @@ func VerifyIDToken(server *Server) gin.HandlerFunc {
 		if err != nil {
 			logger.Printf("error verifying ID token: %v\n", err)
 			c.Set("IDTokenState", err.Error())
-			c.AbortWithStatusJSON(http.StatusForbidden, Reply{
-				TokenState: err.Error(),
+			c.AbortWithStatusJSON(http.StatusForbidden, ErrorReply{
+				Errors: []Error{{Message: err.Error()}},
 			})
 			return
 		}
@@ -215,6 +215,14 @@ type Reply struct {
 	Data       interface{} `json:"data,omitempty"`
 }
 
+type Error struct {
+	Message string `json:"message,omitempty"`
+}
+type ErrorReply struct {
+	Errors []Error     `json:"errors,omitempty"`
+	Data   interface{} `json:"data,omitempty"`
+}
+
 // SetRoute sets the routing for the gin engine
 func SetRoute(server *Server) error {
 	apiRouter := server.Engine.Group("/api")
@@ -233,13 +241,15 @@ func SetRoute(server *Server) error {
 	// Private API
 	// v1 User
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(VerifyIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server))
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
+		UserSrvURL: server.conf.ServiceEndpoints.UserGraphQL,
+	}}))
 	v1TokenAuthenticatedWithFirebaseRouter.POST("/graphql/user", gin.WrapH(srv))
 
 	// v0 api proxy every request to the restful serverce
 	v0Router := apiRouter.Group("/v0")
 	v0tokenStateRouter := v0Router.Use(SetIDTokenStateOnly(server))
-	proxyURL, err := url.Parse(server.conf.V0RESTfulSrvTargetUrl)
+	proxyURL, err := url.Parse(server.conf.V0RESTfulSrvTargetURL)
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/mirror-media/apigateway/graph/generated"
 	"github.com/mirror-media/apigateway/graph/model"
+	"github.com/shurcooL/graphql"
 )
 
 func (r *mutationResolver) Profile(ctx context.Context) (*model.ProfileType, error) {
@@ -29,8 +30,6 @@ func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, bi
 
 func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) (*model.DeleteMember, error) {
 
-	// panic(fmt.Errorf("not implemented"))
-	// TODO relay to user service
 	gCTX, err := GinContextFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +38,7 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	if firebaseID != gCTX.Value("UserID").(string) {
 		return nil, fmt.Errorf("member id(%s) is not allowed to deleted member id(%s)", gCTX.Value("UserID"), firebaseID)
 	}
-	// TODO delete Firebase user
+	// delete Firebase user
 	client, err := FirebaseClientFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -50,11 +49,28 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 		return nil, err
 	}
 
-	result := true
-	deleteUpdate := &model.DeleteMember{
-		Success: &result,
+	// Ask User service to delete the member
+	gqlClient := graphql.NewClient(r.Resolver.UserSrvURL, nil)
+
+	var mutation struct {
+		DeleteMember struct {
+			Success graphql.Boolean
+		} `graphql:"deleteMember(firebaseId: $firebaseId)"`
 	}
-	return deleteUpdate, nil
+
+	variables := map[string]interface{}{
+		"firebaseId": graphql.String(firebaseID),
+	}
+	err = gqlClient.Mutate(context.Background(), &mutation, variables)
+	var success bool
+	if err == nil {
+		success = true
+	}
+
+	deleteMember := &model.DeleteMember{
+		Success: &success,
+	}
+	return deleteMember, err
 }
 
 func (r *mutationResolver) VerifyMember(ctx context.Context, token string) (*model.VerifyAccount, error) {

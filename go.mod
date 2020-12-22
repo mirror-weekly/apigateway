@@ -6,6 +6,7 @@ require (
 	firebase.google.com/go/v4 v4.1.0
 	github.com/99designs/gqlgen v0.13.0
 	github.com/gin-gonic/gin v1.6.3
+	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
 	github.com/sirupsen/logrus v1.7.0
 	github.com/vektah/gqlparser/v2 v2.1.0
 	google.golang.org/api v0.36.0

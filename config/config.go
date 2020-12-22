@@ -8,11 +8,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type ServiceEndpoints struct {
+	UserGraphQL string
+}
+
 type Conf struct {
 	Address                    string
 	FirebaseCredentialFilePath string
 	Port                       int
-	V0RESTfulSrvTargetUrl      string
+	V0RESTfulSrvTargetURL      string
+	ServiceEndpoints           ServiceEndpoints
 }
 
 func (c *Conf) Valid() bool {

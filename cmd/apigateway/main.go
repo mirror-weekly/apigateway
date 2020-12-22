@@ -13,7 +13,10 @@ func main() {
 		Address:                    "0.0.0.0",
 		FirebaseCredentialFilePath: "./firebaseCredential.json",
 		Port:                       8080,
-		V0RESTfulSrvTargetUrl:      "http://104.199.190.189:8080",
+		V0RESTfulSrvTargetURL:      "http://104.199.190.189:8080",
+		ServiceEndpoints: config.ServiceEndpoints{
+			UserGraphQL: "http://104.155.209.114/graphql/",
+		},
 	}
 	server, err := apigateway.NewServer(cfg)
 	if err != nil {

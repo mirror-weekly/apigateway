@@ -12,11 +12,16 @@ import (
 	"google.golang.org/api/option"
 )
 
+type ServiceEndpoints struct {
+	UserGraphQL string
+}
+
 type Server struct {
 	conf           *config.Conf
 	Engine         *gin.Engine
 	FirebaseApp    *firebase.App
 	FirebaseClient *auth.Client
+	Services       *ServiceEndpoints
 }
 
 func init() {
@@ -48,6 +53,9 @@ func NewServer(c config.Conf) (*Server, error) {
 		Engine:         engine,
 		FirebaseApp:    app,
 		FirebaseClient: firebaseClient,
+		Services: &ServiceEndpoints{
+			UserGraphQL: c.ServiceEndpoints.UserGraphQL,
+		},
 	}
 	return s, nil
 }
