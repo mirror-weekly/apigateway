@@ -48,7 +48,43 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 }
 
 func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error) {
-	panic(fmt.Errorf("not implemented"))
+
+	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
+		return nil, err
+	}
+
+	// Ask User service to delete the member
+	gqlClient := graphql.NewClient(r.Resolver.UserSrvURL, nil)
+
+	var mutation struct {
+		UpdateMember struct {
+			Success *graphql.Boolean
+		} `graphql:"createMember(address: $address, birthday: $birthday, firebaseId: $firebaseId, gender: $gender, name: $name, nickname: $nickname, phone: $phone, profileImage: $profileImage)"`
+	}
+
+	// Type conversion
+	var gReference *int32
+	if gender != nil {
+		g := int32(*gender)
+		gReference = &g
+	}
+
+	variables := map[string]interface{}{
+		"address":      (*graphql.String)(address),
+		"birthday":     (*graphql.String)(birthday),
+		"firebaseID":   (graphql.String)(firebaseID),
+		"gender":       (*graphql.Int)((*int32)(gReference)),
+		"name":         (*graphql.String)(name),
+		"nickname":     (*graphql.String)(nickname),
+		"phone":        (*graphql.String)(phone),
+		"profileImage": (*graphql.String)(profileImage),
+	}
+
+	err := gqlClient.Mutate(context.Background(), &mutation, variables)
+
+	return &model.UpdateMember{
+		Success: (*bool)(mutation.UpdateMember.Success),
+	}, err
 }
 
 func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) (*model.DeleteMember, error) {
