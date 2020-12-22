@@ -8,7 +8,6 @@ import (
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
-	"github.com/mirror-media/apigateway/graph/model"
 )
 
 // This file will not be regenerated automatically.
@@ -16,15 +15,6 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct{}
-
-func (r *Resolver) User(ctx context.Context, id string) (*model.UserNode, error) {
-	// panic(fmt.Errorf("not implemented"))
-	// TODO relay to user service
-	user := &model.UserNode{
-		ID: ctx.Value("tokenState").(string),
-	}
-	return user, nil
-}
 
 func GinContextFromContext(ctx context.Context) (*gin.Context, error) {
 	ginContext := ctx.Value("GinContextKey")

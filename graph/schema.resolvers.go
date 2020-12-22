@@ -15,39 +15,20 @@ func (r *mutationResolver) Profile(ctx context.Context) (*model.ProfileType, err
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) Register(ctx context.Context, email string, username string, password1 string, password2 string) (*model.Register, error) {
+func (r *mutationResolver) Member(ctx context.Context) (*model.MemberType, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) VerifyAccount(ctx context.Context, token string) (*model.VerifyAccount, error) {
+func (r *mutationResolver) CreateMember(ctx context.Context, email string, firebaseID string, nickname *string) (*model.CreateMember, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) ResendActivationEmail(ctx context.Context, email string) (*model.ResendActivationEmail, error) {
+func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) SendPasswordResetEmail(ctx context.Context, email string) (*model.SendPasswordResetEmail, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) (*model.DeleteMember, error) {
 
-func (r *mutationResolver) PasswordReset(ctx context.Context, token string, newPassword1 string, newPassword2 string) (*model.PasswordReset, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) PasswordSet(ctx context.Context, token string, newPassword1 string, newPassword2 string) (*model.PasswordSet, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) PasswordChange(ctx context.Context, oldPassword string, newPassword1 string, newPassword2 string) (*model.PasswordChange, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) ArchiveAccount(ctx context.Context, password string) (*model.ArchiveAccount, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) DeleteAccount(ctx context.Context, id string) (*model.DeleteUpdate, error) {
 	// panic(fmt.Errorf("not implemented"))
 	// TODO relay to user service
 	gCTX, err := GinContextFromContext(ctx)
@@ -55,8 +36,8 @@ func (r *mutationResolver) DeleteAccount(ctx context.Context, id string) (*model
 		return nil, err
 	}
 
-	if id != gCTX.Value("UserID").(string) {
-		return nil, fmt.Errorf("id(%s) is not allowed to be deleted by id(%s)", id, gCTX.Value("UserID"))
+	if firebaseID != gCTX.Value("UserID").(string) {
+		return nil, fmt.Errorf("member id(%s) is not allowed to deleted member id(%s)", gCTX.Value("UserID"), firebaseID)
 	}
 	// TODO delete Firebase user
 	client, err := FirebaseClientFromContext(ctx)
@@ -64,20 +45,23 @@ func (r *mutationResolver) DeleteAccount(ctx context.Context, id string) (*model
 		return nil, err
 	}
 
-	err = client.DeleteUser(ctx, id)
+	err = client.DeleteUser(ctx, firebaseID)
 	if err != nil {
 		return nil, err
 	}
 
 	result := true
-	deleteUpdate := &model.DeleteUpdate{
+	deleteUpdate := &model.DeleteMember{
 		Success: &result,
-		Errors:  nil,
 	}
 	return deleteUpdate, nil
 }
 
-func (r *mutationResolver) UpdateAccount(ctx context.Context, firstName *string, lastName *string) (*model.UpdateAccount, error) {
+func (r *mutationResolver) VerifyMember(ctx context.Context, token string) (*model.VerifyAccount, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) ArchiveAccount(ctx context.Context, password string) (*model.ArchiveAccount, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

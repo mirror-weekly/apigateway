@@ -8,35 +8,47 @@ import (
 	"strconv"
 )
 
-// An object with an ID
 type Node interface {
 	IsNode()
 }
 
-// Archive account and revoke refresh tokens.
-//
-// User must be verified and confirm password.
 type ArchiveAccount struct {
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-type DeleteUpdate struct {
-	Success *bool   `json:"success"`
-	Errors  *string `json:"errors"`
+type CreateMember struct {
+	Member  *MemberType `json:"member"`
+	Success *bool       `json:"success"`
 }
 
-// Obtain JSON web token for given user.
-//
-// Allow to perform login with different fields,
-// and secondary email if set. The fields are
-// defined on settings.
-//
-// Not verified users can login by default. This
-// can be changes on settings.
-//
-// If user is archived, make it unarchive and
-// return `unarchiving=True` on output.
+type DeleteMember struct {
+	Success *bool `json:"success"`
+}
+
+type MemberType struct {
+	ID           string           `json:"id"`
+	LastLogin    *string          `json:"lastLogin"`
+	Username     string           `json:"username"`
+	FirstName    string           `json:"firstName"`
+	LastName     string           `json:"lastName"`
+	IsStaff      bool             `json:"isStaff"`
+	IsActive     bool             `json:"isActive"`
+	DateJoined   string           `json:"dateJoined"`
+	Email        string           `json:"email"`
+	FirebaseID   *string          `json:"firebaseId"`
+	Nickname     *string          `json:"nickname"`
+	Name         *string          `json:"name"`
+	Gender       CustomUserGender `json:"gender"`
+	Phone        *string          `json:"phone"`
+	Birthday     string           `json:"birthday"`
+	Address      *string          `json:"address"`
+	ProfileImage *string          `json:"profileImage"`
+	Profile      *ProfileType     `json:"profile"`
+	Password     string           `json:"password"`
+	IsSuperuser  bool             `json:"isSuperuser"`
+}
+
 type ObtainJSONWebToken struct {
 	Token        *string   `json:"token"`
 	Success      *bool     `json:"success"`
@@ -46,63 +58,19 @@ type ObtainJSONWebToken struct {
 	RefreshToken *string   `json:"refreshToken"`
 }
 
-// The Relay compliant `PageInfo` type, containing data necessary to paginate this connection.
 type PageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating backwards, are there more items?
-	HasPreviousPage bool `json:"hasPreviousPage"`
-	// When paginating backwards, the cursor to continue.
-	StartCursor *string `json:"startCursor"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor *string `json:"endCursor"`
-}
-
-// Change account password when user knows the old password.
-//
-// A new token and refresh token are sent. User must be verified.
-type PasswordChange struct {
-	Success      *bool   `json:"success"`
-	Errors       *string `json:"errors"`
-	RefreshToken *string `json:"refreshToken"`
-	Token        *string `json:"token"`
-}
-
-// Change user password without old password.
-//
-// Receive the token that was sent by email.
-//
-// If token and new passwords are valid, update
-// user password and in case of using refresh
-// tokens, revoke all of them.
-//
-// Also, if user has not been verified yet, verify it.
-type PasswordReset struct {
-	Success *bool   `json:"success"`
-	Errors  *string `json:"errors"`
-}
-
-// Set user password - for passwordless registration
-//
-// Receive the token that was sent by email.
-//
-// If token and new passwords are valid, set
-// user password and in case of using refresh
-// tokens, revoke all of them.
-//
-// Also, if user has not been verified yet, verify it.
-type PasswordSet struct {
-	Success *bool   `json:"success"`
-	Errors  *string `json:"errors"`
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor"`
+	EndCursor       *string `json:"endCursor"`
 }
 
 type ProfileType struct {
-	User        *UserType `json:"user"`
-	Bio         string    `json:"bio"`
-	PhoneNumber string    `json:"phoneNumber"`
+	User        *MemberType `json:"user"`
+	Bio         string      `json:"bio"`
+	PhoneNumber string      `json:"phoneNumber"`
 }
 
-// Same as `grapgql_jwt` implementation, with standard output.
 type RefreshToken struct {
 	Token        *string `json:"token"`
 	Payload      *string `json:"payload"`
@@ -111,108 +79,45 @@ type RefreshToken struct {
 	RefreshToken *string `json:"refreshToken"`
 }
 
-// Register user with fields defined in the settings.
-//
-// If the email field of the user model is part of the
-// registration fields (default), check if there is
-// no user with that email or as a secondary email.
-//
-// If it exists, it does not register the user,
-// even if the email field is not defined as unique
-// (default of the default django user model).
-//
-// When creating the user, it also creates a `UserStatus`
-// related to that user, making it possible to track
-// if the user is archived, verified and has a secondary
-// email.
-//
-// Send account verification email.
-//
-// If allowed to not verified users login, return token.
-type Register struct {
-	Success      *bool   `json:"success"`
-	Errors       *string `json:"errors"`
-	RefreshToken *string `json:"refreshToken"`
-	Token        *string `json:"token"`
-}
-
-// Sends activation email.
-//
-// It is called resend because theoretically
-// the first activation email was sent when
-// the user registered.
-//
-// If there is no user with the requested email,
-// a successful response is returned.
-type ResendActivationEmail struct {
-	Success *bool   `json:"success"`
-	Errors  *string `json:"errors"`
-}
-
-// Same as `grapgql_jwt` implementation, with standard output.
 type RevokeToken struct {
 	Revoked *int    `json:"revoked"`
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-// Send password reset email.
-//
-// For non verified users, send an activation
-// email instead.
-//
-// Accepts both primary and secondary email.
-//
-// If there is no user with the requested email,
-// a successful response is returned.
-type SendPasswordResetEmail struct {
-	Success *bool   `json:"success"`
-	Errors  *string `json:"errors"`
-}
-
-// Send activation to secondary email.
-//
-// User must be verified and confirm password.
 type SendSecondaryEmailActivation struct {
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-// Swap between primary and secondary emails.
-//
-// Require password confirmation.
 type SwapEmails struct {
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-// Update user model fields, defined on settings.
-//
-// User must be verified.
-type UpdateAccount struct {
-	Success *bool   `json:"success"`
-	Errors  *string `json:"errors"`
+type UpdateMember struct {
+	Member  *MemberType `json:"member"`
+	Success *bool       `json:"success"`
 }
 
 type UserNode struct {
-	// The ID of the object.
-	ID        string  `json:"id"`
-	LastLogin *string `json:"lastLogin"`
-	// 必要的。150 個字或更少，只包含字母、數字和 @/./+/-/_。
-	Username  string `json:"username"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
-	// 指定是否使用者可以登入此管理網站。
-	IsStaff bool `json:"isStaff"`
-	// 指定使用者是否有效。請取消選擇而不是刪除帳號。
+	ID             string           `json:"id"`
+	LastLogin      *string          `json:"lastLogin"`
+	Username       string           `json:"username"`
+	FirstName      string           `json:"firstName"`
+	LastName       string           `json:"lastName"`
+	IsStaff        bool             `json:"isStaff"`
 	IsActive       bool             `json:"isActive"`
 	DateJoined     string           `json:"dateJoined"`
+	Email          string           `json:"email"`
+	FirebaseID     *string          `json:"firebaseId"`
+	Nickname       *string          `json:"nickname"`
 	Name           *string          `json:"name"`
 	Gender         CustomUserGender `json:"gender"`
 	Phone          *string          `json:"phone"`
 	Birthday       string           `json:"birthday"`
 	Address        *string          `json:"address"`
+	ProfileImage   *string          `json:"profileImage"`
 	Profile        *ProfileType     `json:"profile"`
 	Pk             *int             `json:"pk"`
 	Archived       *bool            `json:"archived"`
@@ -223,72 +128,36 @@ type UserNode struct {
 func (UserNode) IsNode() {}
 
 type UserNodeConnection struct {
-	// Pagination data for this connection.
-	PageInfo *PageInfo `json:"pageInfo"`
-	// Contains the nodes in this connection.
-	Edges []*UserNodeEdge `json:"edges"`
+	PageInfo *PageInfo       `json:"pageInfo"`
+	Edges    []*UserNodeEdge `json:"edges"`
 }
 
-// A Relay edge containing a `UserNode` and its cursor.
 type UserNodeEdge struct {
-	// The item at the end of the edge
-	Node *UserNode `json:"node"`
-	// A cursor for use in pagination
-	Cursor string `json:"cursor"`
+	Node   *UserNode `json:"node"`
+	Cursor string    `json:"cursor"`
 }
 
-type UserType struct {
-	ID        string  `json:"id"`
-	LastLogin *string `json:"lastLogin"`
-	// 必要的。150 個字或更少，只包含字母、數字和 @/./+/-/_。
-	Username   string `json:"username"`
-	Email      string `json:"email"`
-	DateJoined string `json:"dateJoined"`
-}
-
-// Verify user account.
-//
-// Receive the token that was sent by email.
-// If the token is valid, make the user verified
-// by making the `user.status.verified` field true.
 type VerifyAccount struct {
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-// Verify user secondary email.
-//
-// Receive the token that was sent by email.
-// User is already verified when using this mutation.
-//
-// If the token is valid, add the secondary email
-// to `user.status.secondary_email` field.
-//
-// Note that until the secondary email is verified,
-// it has not been saved anywhere beyond the token,
-// so it can still be used to create a new account.
-// After being verified, it will no longer be available.
 type VerifySecondaryEmail struct {
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-// Same as `grapgql_jwt` implementation, with standard output.
 type VerifyToken struct {
 	Payload *string `json:"payload"`
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
 
-// An enumeration.
 type CustomUserGender string
 
 const (
-	// male
 	CustomUserGenderA1 CustomUserGender = "A_1"
-	// female
 	CustomUserGenderA2 CustomUserGender = "A_2"
-	// Not provided
 	CustomUserGenderA0 CustomUserGender = "A_0"
 )
 
