@@ -18,6 +18,19 @@ type Resolver struct {
 	UserSrvURL string
 }
 
+func (r Resolver) IsRequestMatchingRequesterFirebaseID(ctx context.Context, firebaseID string) (bool, error) {
+
+	gCTX, err := GinContextFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if firebaseID != gCTX.Value("UserID").(string) {
+		return false, fmt.Errorf("member id(%s) is not allowed to perfrom action against member id(%s)", gCTX.Value("UserID"), firebaseID)
+	}
+	return true, nil
+}
+
 func GinContextFromContext(ctx context.Context) (*gin.Context, error) {
 	ginContext := ctx.Value("GinContextKey")
 	if ginContext == nil {

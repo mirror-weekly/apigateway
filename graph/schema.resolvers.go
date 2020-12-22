@@ -29,14 +29,8 @@ func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, bi
 }
 
 func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) (*model.DeleteMember, error) {
-
-	gCTX, err := GinContextFromContext(ctx)
-	if err != nil {
+	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
-	}
-
-	if firebaseID != gCTX.Value("UserID").(string) {
-		return nil, fmt.Errorf("member id(%s) is not allowed to deleted member id(%s)", gCTX.Value("UserID"), firebaseID)
 	}
 	// delete Firebase user
 	client, err := FirebaseClientFromContext(ctx)
@@ -62,13 +56,9 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 		"firebaseId": graphql.String(firebaseID),
 	}
 	err = gqlClient.Mutate(context.Background(), &mutation, variables)
-	var success bool
-	if err == nil {
-		success = true
-	}
 
 	deleteMember := &model.DeleteMember{
-		Success: &success,
+		Success: (*bool)(&mutation.DeleteMember.Success),
 	}
 	return deleteMember, err
 }
