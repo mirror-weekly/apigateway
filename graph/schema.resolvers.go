@@ -21,7 +21,30 @@ func (r *mutationResolver) Member(ctx context.Context) (*model.MemberType, error
 }
 
 func (r *mutationResolver) CreateMember(ctx context.Context, email string, firebaseID string, nickname *string) (*model.CreateMember, error) {
-	panic(fmt.Errorf("not implemented"))
+	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
+		return nil, err
+	}
+
+	// Ask User service to delete the member
+	gqlClient := graphql.NewClient(r.Resolver.UserSrvURL, nil)
+
+	var mutation struct {
+		CreateMember struct {
+			Success *graphql.Boolean
+		} `graphql:"createMember(email: $email, firebaseId: $firebaseId, nickname: $nickname)"`
+	}
+
+	variables := map[string]interface{}{
+		"email":      graphql.String(email),
+		"firebaseId": graphql.String(firebaseID),
+		"nickname":   (*graphql.String)(nickname),
+	}
+
+	err := gqlClient.Mutate(context.Background(), &mutation, variables)
+
+	return &model.CreateMember{
+		Success: (*bool)(mutation.CreateMember.Success),
+	}, err
 }
 
 func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error) {
