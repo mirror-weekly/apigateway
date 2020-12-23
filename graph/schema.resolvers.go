@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	mgql "github.com/machinebox/graphql"
 	"github.com/mirror-media/apigateway/graph/generated"
 	"github.com/mirror-media/apigateway/graph/model"
 	"github.com/shurcooL/graphql"
@@ -167,7 +168,44 @@ func (r *queryResolver) Me(ctx context.Context) (*model.UserNode, error) {
 }
 
 func (r *queryResolver) User(ctx context.Context, id string) (*model.UserNode, error) {
-	panic(fmt.Errorf("not implemented"))
+
+	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, id); err != nil {
+		return nil, err
+	}
+
+	client := mgql.NewClient(r.Resolver.UserSrvURL)
+	req := mgql.NewRequest(`
+query ($id: ID!) {
+	user(id: $id) {
+		id
+		lastLogin
+		username
+		firstName
+		lastName
+		isStaff
+		isActive
+		dateJoined
+		email
+		firebaseId
+		nickname
+		name
+		gender
+		phone
+		birthday
+		address
+		profileImage
+		pk
+		archived
+		verified
+		secondaryEmail
+	}
+}`)
+
+	req.Var("id", id)
+	var userNode *model.UserNode
+
+	err := client.Run(ctx, req, userNode)
+	return userNode, err
 }
 
 func (r *queryResolver) Users(ctx context.Context, before *string, after *string, first *int, last *int, email *string, username *string, usernameIcontains *string, usernameIstartswith *string, isActive *bool, statusArchived *bool, statusVerified *bool, statusSecondaryEmail *string) (*model.UserNodeConnection, error) {
