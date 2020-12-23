@@ -32,6 +32,7 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 	var mutation struct {
 		CreateMember struct {
 			Success *graphql.Boolean
+			Msg     *graphql.String
 		} `graphql:"createMember(email: $email, firebaseId: $firebaseId, nickname: $nickname)"`
 	}
 
@@ -45,6 +46,7 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 
 	return &model.CreateMember{
 		Success: (*bool)(mutation.CreateMember.Success),
+		Msg:     (*string)(mutation.CreateMember.Msg),
 	}, err
 }
 

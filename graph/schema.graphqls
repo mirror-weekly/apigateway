@@ -11,6 +11,7 @@ type ArchiveAccount {
 type CreateMember {
   member: MemberType
   success: Boolean
+  msg: String
 }
 
 enum CustomUserGender {
