@@ -20,6 +20,7 @@ type ArchiveAccount struct {
 type CreateMember struct {
 	Member  *MemberType `json:"member"`
 	Success *bool       `json:"success"`
+	Msg     *string     `json:"msg"`
 }
 
 type DeleteMember struct {

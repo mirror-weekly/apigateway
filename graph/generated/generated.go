@@ -50,6 +50,7 @@ type ComplexityRoot struct {
 
 	CreateMember struct {
 		Member  func(childComplexity int) int
+		Msg     func(childComplexity int) int
 		Success func(childComplexity int) int
 	}
 
