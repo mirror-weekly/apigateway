@@ -27,26 +27,21 @@ type DeleteMember struct {
 }
 
 type MemberType struct {
-	ID           string           `json:"id"`
-	LastLogin    *string          `json:"lastLogin"`
-	Username     string           `json:"username"`
-	FirstName    string           `json:"firstName"`
-	LastName     string           `json:"lastName"`
-	IsStaff      bool             `json:"isStaff"`
-	IsActive     bool             `json:"isActive"`
-	DateJoined   string           `json:"dateJoined"`
-	Email        string           `json:"email"`
-	FirebaseID   *string          `json:"firebaseId"`
-	Nickname     *string          `json:"nickname"`
-	Name         *string          `json:"name"`
-	Gender       CustomUserGender `json:"gender"`
-	Phone        *string          `json:"phone"`
-	Birthday     string           `json:"birthday"`
-	Address      *string          `json:"address"`
-	ProfileImage *string          `json:"profileImage"`
-	Profile      *ProfileType     `json:"profile"`
-	Password     string           `json:"password"`
-	IsSuperuser  bool             `json:"isSuperuser"`
+	ID          string           `json:"id"`
+	LastLogin   *string          `json:"lastLogin"`
+	Username    string           `json:"username"`
+	IsStaff     bool             `json:"isStaff"`
+	IsActive    bool             `json:"isActive"`
+	DateJoined  string           `json:"dateJoined"`
+	Email       string           `json:"email"`
+	FirebaseID  *string          `json:"firebaseId"`
+	Nickname    *string          `json:"nickname"`
+	Name        *string          `json:"name"`
+	Gender      CustomUserGender `json:"gender"`
+	Phone       *string          `json:"phone"`
+	Birthday    string           `json:"birthday"`
+	Address     *string          `json:"address"`
+	IsSuperuser bool             `json:"isSuperuser"`
 }
 
 type ObtainJSONWebToken struct {
@@ -56,13 +51,6 @@ type ObtainJSONWebToken struct {
 	User         *UserNode `json:"user"`
 	Unarchiving  *bool     `json:"unarchiving"`
 	RefreshToken *string   `json:"refreshToken"`
-}
-
-type PageInfo struct {
-	HasNextPage     bool    `json:"hasNextPage"`
-	HasPreviousPage bool    `json:"hasPreviousPage"`
-	StartCursor     *string `json:"startCursor"`
-	EndCursor       *string `json:"endCursor"`
 }
 
 type ProfileType struct {
@@ -126,16 +114,6 @@ type UserNode struct {
 }
 
 func (UserNode) IsNode() {}
-
-type UserNodeConnection struct {
-	PageInfo *PageInfo       `json:"pageInfo"`
-	Edges    []*UserNodeEdge `json:"edges"`
-}
-
-type UserNodeEdge struct {
-	Node   *UserNode `json:"node"`
-	Cursor string    `json:"cursor"`
-}
 
 type VerifyAccount struct {
 	Success *bool   `json:"success"`

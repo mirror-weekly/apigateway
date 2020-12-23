@@ -58,26 +58,21 @@ type ComplexityRoot struct {
 	}
 
 	MemberType struct {
-		Address      func(childComplexity int) int
-		Birthday     func(childComplexity int) int
-		DateJoined   func(childComplexity int) int
-		Email        func(childComplexity int) int
-		FirebaseID   func(childComplexity int) int
-		FirstName    func(childComplexity int) int
-		Gender       func(childComplexity int) int
-		ID           func(childComplexity int) int
-		IsActive     func(childComplexity int) int
-		IsStaff      func(childComplexity int) int
-		IsSuperuser  func(childComplexity int) int
-		LastLogin    func(childComplexity int) int
-		LastName     func(childComplexity int) int
-		Name         func(childComplexity int) int
-		Nickname     func(childComplexity int) int
-		Password     func(childComplexity int) int
-		Phone        func(childComplexity int) int
-		Profile      func(childComplexity int) int
-		ProfileImage func(childComplexity int) int
-		Username     func(childComplexity int) int
+		Address     func(childComplexity int) int
+		Birthday    func(childComplexity int) int
+		DateJoined  func(childComplexity int) int
+		Email       func(childComplexity int) int
+		FirebaseID  func(childComplexity int) int
+		Gender      func(childComplexity int) int
+		ID          func(childComplexity int) int
+		IsActive    func(childComplexity int) int
+		IsStaff     func(childComplexity int) int
+		IsSuperuser func(childComplexity int) int
+		LastLogin   func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Nickname    func(childComplexity int) int
+		Phone       func(childComplexity int) int
+		Username    func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -106,13 +101,6 @@ type ComplexityRoot struct {
 		User         func(childComplexity int) int
 	}
 
-	PageInfo struct {
-		EndCursor       func(childComplexity int) int
-		HasNextPage     func(childComplexity int) int
-		HasPreviousPage func(childComplexity int) int
-		StartCursor     func(childComplexity int) int
-	}
-
 	ProfileType struct {
 		Bio         func(childComplexity int) int
 		PhoneNumber func(childComplexity int) int
@@ -121,9 +109,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		AllProfile func(childComplexity int) int
-		Me         func(childComplexity int) int
-		User       func(childComplexity int, id string) int
-		Users      func(childComplexity int, before *string, after *string, first *int, last *int, email *string, username *string, usernameIcontains *string, usernameIstartswith *string, isActive *bool, statusArchived *bool, statusVerified *bool, statusSecondaryEmail *string) int
+		Member     func(childComplexity int, firebaseID string) int
 	}
 
 	RefreshToken struct {
@@ -180,16 +166,6 @@ type ComplexityRoot struct {
 		Verified       func(childComplexity int) int
 	}
 
-	UserNodeConnection struct {
-		Edges    func(childComplexity int) int
-		PageInfo func(childComplexity int) int
-	}
-
-	UserNodeEdge struct {
-		Cursor func(childComplexity int) int
-		Node   func(childComplexity int) int
-	}
-
 	VerifyAccount struct {
 		Errors  func(childComplexity int) int
 		Success func(childComplexity int) int
@@ -225,9 +201,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	AllProfile(ctx context.Context) ([]*model.ProfileType, error)
-	Me(ctx context.Context) (*model.UserNode, error)
-	User(ctx context.Context, id string) (*model.UserNode, error)
-	Users(ctx context.Context, before *string, after *string, first *int, last *int, email *string, username *string, usernameIcontains *string, usernameIstartswith *string, isActive *bool, statusArchived *bool, statusVerified *bool, statusSecondaryEmail *string) (*model.UserNodeConnection, error)
+	Member(ctx context.Context, firebaseID string) (*model.MemberType, error)
 }
 
 type executableSchema struct {
@@ -265,6 +239,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CreateMember.Member(childComplexity), true
+
+	case "CreateMember.msg":
+		if e.complexity.CreateMember.Msg == nil {
+			break
+		}
+
+		return e.complexity.CreateMember.Msg(childComplexity), true
 
 	case "CreateMember.success":
 		if e.complexity.CreateMember.Success == nil {
@@ -315,13 +296,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MemberType.FirebaseID(childComplexity), true
 
-	case "MemberType.firstName":
-		if e.complexity.MemberType.FirstName == nil {
-			break
-		}
-
-		return e.complexity.MemberType.FirstName(childComplexity), true
-
 	case "MemberType.gender":
 		if e.complexity.MemberType.Gender == nil {
 			break
@@ -364,13 +338,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MemberType.LastLogin(childComplexity), true
 
-	case "MemberType.lastName":
-		if e.complexity.MemberType.LastName == nil {
-			break
-		}
-
-		return e.complexity.MemberType.LastName(childComplexity), true
-
 	case "MemberType.name":
 		if e.complexity.MemberType.Name == nil {
 			break
@@ -385,33 +352,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MemberType.Nickname(childComplexity), true
 
-	case "MemberType.password":
-		if e.complexity.MemberType.Password == nil {
-			break
-		}
-
-		return e.complexity.MemberType.Password(childComplexity), true
-
 	case "MemberType.phone":
 		if e.complexity.MemberType.Phone == nil {
 			break
 		}
 
 		return e.complexity.MemberType.Phone(childComplexity), true
-
-	case "MemberType.profile":
-		if e.complexity.MemberType.Profile == nil {
-			break
-		}
-
-		return e.complexity.MemberType.Profile(childComplexity), true
-
-	case "MemberType.profileImage":
-		if e.complexity.MemberType.ProfileImage == nil {
-			break
-		}
-
-		return e.complexity.MemberType.ProfileImage(childComplexity), true
 
 	case "MemberType.username":
 		if e.complexity.MemberType.Username == nil {
@@ -620,34 +566,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ObtainJSONWebToken.User(childComplexity), true
 
-	case "PageInfo.endCursor":
-		if e.complexity.PageInfo.EndCursor == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.EndCursor(childComplexity), true
-
-	case "PageInfo.hasNextPage":
-		if e.complexity.PageInfo.HasNextPage == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.HasNextPage(childComplexity), true
-
-	case "PageInfo.hasPreviousPage":
-		if e.complexity.PageInfo.HasPreviousPage == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
-
-	case "PageInfo.startCursor":
-		if e.complexity.PageInfo.StartCursor == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.StartCursor(childComplexity), true
-
 	case "ProfileType.bio":
 		if e.complexity.ProfileType.Bio == nil {
 			break
@@ -676,36 +594,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AllProfile(childComplexity), true
 
-	case "Query.me":
-		if e.complexity.Query.Me == nil {
+	case "Query.member":
+		if e.complexity.Query.Member == nil {
 			break
 		}
 
-		return e.complexity.Query.Me(childComplexity), true
-
-	case "Query.user":
-		if e.complexity.Query.User == nil {
-			break
-		}
-
-		args, err := ec.field_Query_user_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_member_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
-
-	case "Query.users":
-		if e.complexity.Query.Users == nil {
-			break
-		}
-
-		args, err := ec.field_Query_users_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Users(childComplexity, args["before"].(*string), args["after"].(*string), args["first"].(*int), args["last"].(*int), args["email"].(*string), args["username"].(*string), args["username_Icontains"].(*string), args["username_Istartswith"].(*string), args["isActive"].(*bool), args["status_Archived"].(*bool), args["status_Verified"].(*bool), args["status_SecondaryEmail"].(*string)), true
+		return e.complexity.Query.Member(childComplexity, args["firebaseId"].(string)), true
 
 	case "RefreshToken.errors":
 		if e.complexity.RefreshToken.Errors == nil {
@@ -959,34 +858,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserNode.Verified(childComplexity), true
 
-	case "UserNodeConnection.edges":
-		if e.complexity.UserNodeConnection.Edges == nil {
-			break
-		}
-
-		return e.complexity.UserNodeConnection.Edges(childComplexity), true
-
-	case "UserNodeConnection.pageInfo":
-		if e.complexity.UserNodeConnection.PageInfo == nil {
-			break
-		}
-
-		return e.complexity.UserNodeConnection.PageInfo(childComplexity), true
-
-	case "UserNodeEdge.cursor":
-		if e.complexity.UserNodeEdge.Cursor == nil {
-			break
-		}
-
-		return e.complexity.UserNodeEdge.Cursor(childComplexity), true
-
-	case "UserNodeEdge.node":
-		if e.complexity.UserNodeEdge.Node == nil {
-			break
-		}
-
-		return e.complexity.UserNodeEdge.Node(childComplexity), true
-
 	case "VerifyAccount.errors":
 		if e.complexity.VerifyAccount.Errors == nil {
 			break
@@ -1113,6 +984,7 @@ type ArchiveAccount {
 type CreateMember {
   member: MemberType
   success: Boolean
+  msg: String
 }
 
 enum CustomUserGender {
@@ -1137,8 +1009,6 @@ type MemberType {
   id: ID!
   lastLogin: DateTime
   username: String!
-  firstName: String!
-  lastName: String!
   isStaff: Boolean!
   isActive: Boolean!
   dateJoined: DateTime!
@@ -1150,9 +1020,6 @@ type MemberType {
   phone: String
   birthday: Date!
   address: String
-  profileImage: String
-  profile: ProfileType
-  password: String!
   isSuperuser: Boolean!
 }
 
@@ -1186,13 +1053,6 @@ type ObtainJSONWebToken {
   refreshToken: String
 }
 
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
 type ProfileType {
   user: MemberType!
   bio: String!
@@ -1201,9 +1061,7 @@ type ProfileType {
 
 type Query {
   allProfile: [ProfileType]
-  me: UserNode
-  user(id: ID!): UserNode
-  users(before: String, after: String, first: Int, last: Int, email: String, username: String, username_Icontains: String, username_Istartswith: String, isActive: Boolean, status_Archived: Boolean, status_Verified: Boolean, status_SecondaryEmail: String): UserNodeConnection
+  member(firebaseId: String!): MemberType
 }
 
 type RefreshToken {
@@ -1258,16 +1116,6 @@ type UserNode implements Node {
   archived: Boolean
   verified: Boolean
   secondaryEmail: String
-}
-
-type UserNodeConnection {
-  pageInfo: PageInfo!
-  edges: [UserNodeEdge]!
-}
-
-type UserNodeEdge {
-  node: UserNode
-  cursor: String!
 }
 
 type VerifyAccount {
@@ -1596,132 +1444,18 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_member_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+	if tmp, ok := rawArgs["firebaseId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firebaseId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
-	var arg4 *string
-	if tmp, ok := rawArgs["email"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["email"] = arg4
-	var arg5 *string
-	if tmp, ok := rawArgs["username"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["username"] = arg5
-	var arg6 *string
-	if tmp, ok := rawArgs["username_Icontains"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username_Icontains"))
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["username_Icontains"] = arg6
-	var arg7 *string
-	if tmp, ok := rawArgs["username_Istartswith"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username_Istartswith"))
-		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["username_Istartswith"] = arg7
-	var arg8 *bool
-	if tmp, ok := rawArgs["isActive"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isActive"))
-		arg8, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["isActive"] = arg8
-	var arg9 *bool
-	if tmp, ok := rawArgs["status_Archived"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status_Archived"))
-		arg9, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["status_Archived"] = arg9
-	var arg10 *bool
-	if tmp, ok := rawArgs["status_Verified"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status_Verified"))
-		arg10, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["status_Verified"] = arg10
-	var arg11 *string
-	if tmp, ok := rawArgs["status_SecondaryEmail"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status_SecondaryEmail"))
-		arg11, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["status_SecondaryEmail"] = arg11
+	args["firebaseId"] = arg0
 	return args, nil
 }
 
@@ -1891,6 +1625,38 @@ func (ec *executionContext) _CreateMember_success(ctx context.Context, field gra
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _CreateMember_msg(ctx context.Context, field graphql.CollectedField, obj *model.CreateMember) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "CreateMember",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Msg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _DeleteMember_success(ctx context.Context, field graphql.CollectedField, obj *model.DeleteMember) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2009,76 +1775,6 @@ func (ec *executionContext) _MemberType_username(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Username, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MemberType_firstName(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MemberType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.FirstName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MemberType_lastName(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MemberType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2463,105 +2159,6 @@ func (ec *executionContext) _MemberType_address(ctx context.Context, field graph
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MemberType_profileImage(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MemberType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProfileImage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MemberType_profile(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MemberType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Profile, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.ProfileType)
-	fc.Result = res
-	return ec.marshalOProfileType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MemberType_password(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MemberType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Password, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MemberType_isSuperuser(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
@@ -3323,140 +2920,6 @@ func (ec *executionContext) _ObtainJSONWebToken_refreshToken(ctx context.Context
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasNextPage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasPreviousPage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StartCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EndCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _ProfileType_user(ctx context.Context, field graphql.CollectedField, obj *model.ProfileType) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3594,39 +3057,7 @@ func (ec *executionContext) _Query_allProfile(ctx context.Context, field graphql
 	return ec.marshalOProfileType2ᚕᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Me(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.UserNode)
-	fc.Result = res
-	return ec.marshalOUserNode2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNode(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_member(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3643,7 +3074,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_user_args(ctx, rawArgs)
+	args, err := ec.field_Query_member_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -3651,7 +3082,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().User(rctx, args["id"].(string))
+		return ec.resolvers.Query().Member(rctx, args["firebaseId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3660,48 +3091,9 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserNode)
+	res := resTmp.(*model.MemberType)
 	fc.Result = res
-	return ec.marshalOUserNode2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNode(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_users_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx, args["before"].(*string), args["after"].(*string), args["first"].(*int), args["last"].(*int), args["email"].(*string), args["username"].(*string), args["username_Icontains"].(*string), args["username_Istartswith"].(*string), args["isActive"].(*bool), args["status_Archived"].(*bool), args["status_Verified"].(*bool), args["status_SecondaryEmail"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.UserNodeConnection)
-	fc.Result = res
-	return ec.marshalOUserNodeConnection2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNodeConnection(ctx, field.Selections, res)
+	return ec.marshalOMemberType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐMemberType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4955,143 +4347,6 @@ func (ec *executionContext) _UserNode_secondaryEmail(ctx context.Context, field 
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserNodeConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.UserNodeConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UserNodeConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.PageInfo)
-	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserNodeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.UserNodeConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UserNodeConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.UserNodeEdge)
-	fc.Result = res
-	return ec.marshalNUserNodeEdge2ᚕᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNodeEdge(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserNodeEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.UserNodeEdge) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UserNodeEdge",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.UserNode)
-	fc.Result = res
-	return ec.marshalOUserNode2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNode(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserNodeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.UserNodeEdge) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UserNodeEdge",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _VerifyAccount_success(ctx context.Context, field graphql.CollectedField, obj *model.VerifyAccount) (ret graphql.Marshaler) {
@@ -6470,6 +5725,8 @@ func (ec *executionContext) _CreateMember(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._CreateMember_member(ctx, field, obj)
 		case "success":
 			out.Values[i] = ec._CreateMember_success(ctx, field, obj)
+		case "msg":
+			out.Values[i] = ec._CreateMember_msg(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6528,16 +5785,6 @@ func (ec *executionContext) _MemberType(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "firstName":
-			out.Values[i] = ec._MemberType_firstName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastName":
-			out.Values[i] = ec._MemberType_lastName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "isStaff":
 			out.Values[i] = ec._MemberType_isStaff(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6578,15 +5825,6 @@ func (ec *executionContext) _MemberType(ctx context.Context, sel ast.SelectionSe
 			}
 		case "address":
 			out.Values[i] = ec._MemberType_address(ctx, field, obj)
-		case "profileImage":
-			out.Values[i] = ec._MemberType_profileImage(ctx, field, obj)
-		case "profile":
-			out.Values[i] = ec._MemberType_profile(ctx, field, obj)
-		case "password":
-			out.Values[i] = ec._MemberType_password(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "isSuperuser":
 			out.Values[i] = ec._MemberType_isSuperuser(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6691,42 +5929,6 @@ func (ec *executionContext) _ObtainJSONWebToken(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var pageInfoImplementors = []string{"PageInfo"}
-
-func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PageInfo")
-		case "hasNextPage":
-			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "hasPreviousPage":
-			out.Values[i] = ec._PageInfo_hasPreviousPage(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "startCursor":
-			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
-		case "endCursor":
-			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var profileTypeImplementors = []string{"ProfileType"}
 
 func (ec *executionContext) _ProfileType(ctx context.Context, sel ast.SelectionSet, obj *model.ProfileType) graphql.Marshaler {
@@ -6790,7 +5992,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_allProfile(ctx, field)
 				return res
 			})
-		case "me":
+		case "member":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -6798,29 +6000,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_me(ctx, field)
-				return res
-			})
-		case "user":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_user(ctx, field)
-				return res
-			})
-		case "users":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_users(ctx, field)
+				res = ec._Query_member(ctx, field)
 				return res
 			})
 		case "__type":
@@ -7061,67 +6241,6 @@ func (ec *executionContext) _UserNode(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._UserNode_verified(ctx, field, obj)
 		case "secondaryEmail":
 			out.Values[i] = ec._UserNode_secondaryEmail(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var userNodeConnectionImplementors = []string{"UserNodeConnection"}
-
-func (ec *executionContext) _UserNodeConnection(ctx context.Context, sel ast.SelectionSet, obj *model.UserNodeConnection) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, userNodeConnectionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("UserNodeConnection")
-		case "pageInfo":
-			out.Values[i] = ec._UserNodeConnection_pageInfo(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "edges":
-			out.Values[i] = ec._UserNodeConnection_edges(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var userNodeEdgeImplementors = []string{"UserNodeEdge"}
-
-func (ec *executionContext) _UserNodeEdge(ctx context.Context, sel ast.SelectionSet, obj *model.UserNodeEdge) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, userNodeEdgeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("UserNodeEdge")
-		case "node":
-			out.Values[i] = ec._UserNodeEdge_node(ctx, field, obj)
-		case "cursor":
-			out.Values[i] = ec._UserNodeEdge_cursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7538,16 +6657,6 @@ func (ec *executionContext) marshalNMemberType2ᚖgithubᚗcomᚋmirrorᚑmedia�
 	return ec._MemberType(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PageInfo(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7561,43 +6670,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNUserNodeEdge2ᚕᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNodeEdge(ctx context.Context, sel ast.SelectionSet, v []*model.UserNodeEdge) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOUserNodeEdge2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNodeEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -8074,20 +7146,6 @@ func (ec *executionContext) marshalOUserNode2ᚖgithubᚗcomᚋmirrorᚑmediaᚋ
 		return graphql.Null
 	}
 	return ec._UserNode(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOUserNodeConnection2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNodeConnection(ctx context.Context, sel ast.SelectionSet, v *model.UserNodeConnection) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._UserNodeConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOUserNodeEdge2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐUserNodeEdge(ctx context.Context, sel ast.SelectionSet, v *model.UserNodeEdge) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._UserNodeEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOVerifyAccount2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐVerifyAccount(ctx context.Context, sel ast.SelectionSet, v *model.VerifyAccount) graphql.Marshaler {

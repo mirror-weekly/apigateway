@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	mgql "github.com/machinebox/graphql"
 	"github.com/mirror-media/apigateway/graph/generated"
@@ -51,7 +52,6 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 }
 
 func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error) {
-
 	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
@@ -165,53 +165,37 @@ func (r *queryResolver) AllProfile(ctx context.Context) ([]*model.ProfileType, e
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) Me(ctx context.Context) (*model.UserNode, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.MemberType, error) {
 
-func (r *queryResolver) User(ctx context.Context, id string) (*model.UserNode, error) {
-
-	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, id); err != nil {
+	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
 
+	preloads := GetPreloads(ctx)
+
 	client := mgql.NewClient(r.Resolver.UserSrvURL)
-	req := mgql.NewRequest(`
-query ($id: ID!) {
-	user(id: $id) {
-		id
-		lastLogin
-		username
-		firstName
-		lastName
-		isStaff
-		isActive
-		dateJoined
-		email
-		firebaseId
-		nickname
-		name
-		gender
-		phone
-		birthday
-		address
-		profileImage
-		pk
-		archived
-		verified
-		secondaryEmail
+
+	// Construct GraphQL Query
+	preGQL := []string{"query ($firebaseId: String!) {", "member(firebaseId: $firebaseId) {"}
+
+	fieldsOnly := Map(preloads, func(s string) string {
+		ns := strings.Split(s, ".")
+		return ns[len(ns)-1]
+	})
+
+	preGQL = append(preGQL, fieldsOnly...)
+	preGQL = append(preGQL, "}", "}")
+	gql := strings.Join(preGQL, "\n")
+
+	// Do the query
+	req := mgql.NewRequest(gql)
+	req.Var("firebaseId", firebaseID)
+	var member struct {
+		Member *model.MemberType `json:"member"`
 	}
-}`)
+	err := client.Run(ctx, req, &member)
 
-	req.Var("id", id)
-	var userNode *model.UserNode
-
-	err := client.Run(ctx, req, userNode)
-	return userNode, err
-}
-
-func (r *queryResolver) Users(ctx context.Context, before *string, after *string, first *int, last *int, email *string, username *string, usernameIcontains *string, usernameIstartswith *string, isActive *bool, statusArchived *bool, statusVerified *bool, statusSecondaryEmail *string) (*model.UserNodeConnection, error) {
-	panic(fmt.Errorf("not implemented"))
+	return member.Member, err
 }
 
 // Mutation returns generated.MutationResolver implementation.

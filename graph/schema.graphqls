@@ -36,8 +36,6 @@ type MemberType {
   id: ID!
   lastLogin: DateTime
   username: String!
-  firstName: String!
-  lastName: String!
   isStaff: Boolean!
   isActive: Boolean!
   dateJoined: DateTime!
@@ -49,9 +47,6 @@ type MemberType {
   phone: String
   birthday: Date!
   address: String
-  profileImage: String
-  profile: ProfileType
-  password: String!
   isSuperuser: Boolean!
 }
 
@@ -85,13 +80,6 @@ type ObtainJSONWebToken {
   refreshToken: String
 }
 
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
 type ProfileType {
   user: MemberType!
   bio: String!
@@ -100,9 +88,7 @@ type ProfileType {
 
 type Query {
   allProfile: [ProfileType]
-  me: UserNode
-  user(id: ID!): UserNode
-  users(before: String, after: String, first: Int, last: Int, email: String, username: String, username_Icontains: String, username_Istartswith: String, isActive: Boolean, status_Archived: Boolean, status_Verified: Boolean, status_SecondaryEmail: String): UserNodeConnection
+  member(firebaseId: String!): MemberType
 }
 
 type RefreshToken {
@@ -157,16 +143,6 @@ type UserNode implements Node {
   archived: Boolean
   verified: Boolean
   secondaryEmail: String
-}
-
-type UserNodeConnection {
-  pageInfo: PageInfo!
-  edges: [UserNodeEdge]!
-}
-
-type UserNodeEdge {
-  node: UserNode
-  cursor: String!
 }
 
 type VerifyAccount {
