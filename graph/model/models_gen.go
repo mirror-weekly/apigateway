@@ -34,13 +34,16 @@ type MemberType struct {
 	IsStaff     bool             `json:"isStaff"`
 	IsActive    bool             `json:"isActive"`
 	DateJoined  string           `json:"dateJoined"`
-	Email       string           `json:"email"`
+	Email       *string          `json:"email"`
 	FirebaseID  *string          `json:"firebaseId"`
 	Nickname    *string          `json:"nickname"`
 	Name        *string          `json:"name"`
 	Gender      CustomUserGender `json:"gender"`
 	Phone       *string          `json:"phone"`
-	Birthday    string           `json:"birthday"`
+	Birthday    *string          `json:"birthday"`
+	Country     *string          `json:"country"`
+	City        *string          `json:"city"`
+	District    *string          `json:"district"`
 	Address     *string          `json:"address"`
 	IsSuperuser bool             `json:"isSuperuser"`
 }
@@ -52,12 +55,6 @@ type ObtainJSONWebToken struct {
 	User         *UserNode `json:"user"`
 	Unarchiving  *bool     `json:"unarchiving"`
 	RefreshToken *string   `json:"refreshToken"`
-}
-
-type ProfileType struct {
-	User        *MemberType `json:"user"`
-	Bio         string      `json:"bio"`
-	PhoneNumber string      `json:"phoneNumber"`
 }
 
 type RefreshToken struct {
@@ -98,16 +95,18 @@ type UserNode struct {
 	IsStaff        bool             `json:"isStaff"`
 	IsActive       bool             `json:"isActive"`
 	DateJoined     string           `json:"dateJoined"`
-	Email          string           `json:"email"`
+	Email          *string          `json:"email"`
 	FirebaseID     *string          `json:"firebaseId"`
 	Nickname       *string          `json:"nickname"`
 	Name           *string          `json:"name"`
 	Gender         CustomUserGender `json:"gender"`
 	Phone          *string          `json:"phone"`
-	Birthday       string           `json:"birthday"`
+	Birthday       *string          `json:"birthday"`
+	Country        *string          `json:"country"`
+	City           *string          `json:"city"`
+	District       *string          `json:"district"`
 	Address        *string          `json:"address"`
 	ProfileImage   *string          `json:"profileImage"`
-	Profile        *ProfileType     `json:"profile"`
 	Pk             *int             `json:"pk"`
 	Archived       *bool            `json:"archived"`
 	Verified       *bool            `json:"verified"`
@@ -138,17 +137,19 @@ const (
 	CustomUserGenderA1 CustomUserGender = "A_1"
 	CustomUserGenderA2 CustomUserGender = "A_2"
 	CustomUserGenderA0 CustomUserGender = "A_0"
+	CustomUserGenderA3 CustomUserGender = "A_3"
 )
 
 var AllCustomUserGender = []CustomUserGender{
 	CustomUserGenderA1,
 	CustomUserGenderA2,
 	CustomUserGenderA0,
+	CustomUserGenderA3,
 }
 
 func (e CustomUserGender) IsValid() bool {
 	switch e {
-	case CustomUserGenderA1, CustomUserGenderA2, CustomUserGenderA0:
+	case CustomUserGenderA1, CustomUserGenderA2, CustomUserGenderA0, CustomUserGenderA3:
 		return true
 	}
 	return false

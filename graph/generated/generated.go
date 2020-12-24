@@ -61,7 +61,10 @@ type ComplexityRoot struct {
 	MemberType struct {
 		Address     func(childComplexity int) int
 		Birthday    func(childComplexity int) int
+		City        func(childComplexity int) int
+		Country     func(childComplexity int) int
 		DateJoined  func(childComplexity int) int
+		District    func(childComplexity int) int
 		Email       func(childComplexity int) int
 		FirebaseID  func(childComplexity int) int
 		Gender      func(childComplexity int) int
@@ -81,13 +84,12 @@ type ComplexityRoot struct {
 		CreateMember                 func(childComplexity int, email string, firebaseID string, nickname *string) int
 		DeleteMember                 func(childComplexity int, firebaseID string) int
 		Member                       func(childComplexity int) int
-		Profile                      func(childComplexity int) int
 		RefreshToken                 func(childComplexity int, refreshToken string) int
 		RevokeToken                  func(childComplexity int, refreshToken string) int
 		SendSecondaryEmailActivation func(childComplexity int, email string, password string) int
 		SwapEmails                   func(childComplexity int, password string) int
 		TokenAuth                    func(childComplexity int, password string, email *string, username *string) int
-		UpdateMember                 func(childComplexity int, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) int
+		UpdateMember                 func(childComplexity int, address *string, birthday *string, city *string, country *string, district *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) int
 		VerifyMember                 func(childComplexity int, token string) int
 		VerifySecondaryEmail         func(childComplexity int, token string) int
 		VerifyToken                  func(childComplexity int, token string) int
@@ -102,15 +104,8 @@ type ComplexityRoot struct {
 		User         func(childComplexity int) int
 	}
 
-	ProfileType struct {
-		Bio         func(childComplexity int) int
-		PhoneNumber func(childComplexity int) int
-		User        func(childComplexity int) int
-	}
-
 	Query struct {
-		AllProfile func(childComplexity int) int
-		Member     func(childComplexity int, firebaseID string) int
+		Member func(childComplexity int, firebaseID string) int
 	}
 
 	RefreshToken struct {
@@ -146,7 +141,10 @@ type ComplexityRoot struct {
 		Address        func(childComplexity int) int
 		Archived       func(childComplexity int) int
 		Birthday       func(childComplexity int) int
+		City           func(childComplexity int) int
+		Country        func(childComplexity int) int
 		DateJoined     func(childComplexity int) int
+		District       func(childComplexity int) int
 		Email          func(childComplexity int) int
 		FirebaseID     func(childComplexity int) int
 		FirstName      func(childComplexity int) int
@@ -160,7 +158,6 @@ type ComplexityRoot struct {
 		Nickname       func(childComplexity int) int
 		Phone          func(childComplexity int) int
 		Pk             func(childComplexity int) int
-		Profile        func(childComplexity int) int
 		ProfileImage   func(childComplexity int) int
 		SecondaryEmail func(childComplexity int) int
 		Username       func(childComplexity int) int
@@ -185,10 +182,9 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Profile(ctx context.Context) (*model.ProfileType, error)
 	Member(ctx context.Context) (*model.MemberType, error)
 	CreateMember(ctx context.Context, email string, firebaseID string, nickname *string) (*model.CreateMember, error)
-	UpdateMember(ctx context.Context, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error)
+	UpdateMember(ctx context.Context, address *string, birthday *string, city *string, country *string, district *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error)
 	DeleteMember(ctx context.Context, firebaseID string) (*model.DeleteMember, error)
 	VerifyMember(ctx context.Context, token string) (*model.VerifyAccount, error)
 	ArchiveAccount(ctx context.Context, password string) (*model.ArchiveAccount, error)
@@ -201,7 +197,6 @@ type MutationResolver interface {
 	RevokeToken(ctx context.Context, refreshToken string) (*model.RevokeToken, error)
 }
 type QueryResolver interface {
-	AllProfile(ctx context.Context) ([]*model.ProfileType, error)
 	Member(ctx context.Context, firebaseID string) (*model.MemberType, error)
 }
 
@@ -276,12 +271,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MemberType.Birthday(childComplexity), true
 
+	case "MemberType.city":
+		if e.complexity.MemberType.City == nil {
+			break
+		}
+
+		return e.complexity.MemberType.City(childComplexity), true
+
+	case "MemberType.country":
+		if e.complexity.MemberType.Country == nil {
+			break
+		}
+
+		return e.complexity.MemberType.Country(childComplexity), true
+
 	case "MemberType.dateJoined":
 		if e.complexity.MemberType.DateJoined == nil {
 			break
 		}
 
 		return e.complexity.MemberType.DateJoined(childComplexity), true
+
+	case "MemberType.district":
+		if e.complexity.MemberType.District == nil {
+			break
+		}
+
+		return e.complexity.MemberType.District(childComplexity), true
 
 	case "MemberType.email":
 		if e.complexity.MemberType.Email == nil {
@@ -410,13 +426,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Member(childComplexity), true
 
-	case "Mutation.profile":
-		if e.complexity.Mutation.Profile == nil {
-			break
-		}
-
-		return e.complexity.Mutation.Profile(childComplexity), true
-
 	case "Mutation.refreshToken":
 		if e.complexity.Mutation.RefreshToken == nil {
 			break
@@ -487,7 +496,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateMember(childComplexity, args["address"].(*string), args["birthday"].(*string), args["firebaseId"].(string), args["gender"].(*int), args["name"].(*string), args["nickname"].(*string), args["phone"].(*string), args["profileImage"].(*string)), true
+		return e.complexity.Mutation.UpdateMember(childComplexity, args["address"].(*string), args["birthday"].(*string), args["city"].(*string), args["country"].(*string), args["district"].(*string), args["firebaseId"].(string), args["gender"].(*int), args["name"].(*string), args["nickname"].(*string), args["phone"].(*string), args["profileImage"].(*string)), true
 
 	case "Mutation.verifyMember":
 		if e.complexity.Mutation.VerifyMember == nil {
@@ -566,34 +575,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObtainJSONWebToken.User(childComplexity), true
-
-	case "ProfileType.bio":
-		if e.complexity.ProfileType.Bio == nil {
-			break
-		}
-
-		return e.complexity.ProfileType.Bio(childComplexity), true
-
-	case "ProfileType.phoneNumber":
-		if e.complexity.ProfileType.PhoneNumber == nil {
-			break
-		}
-
-		return e.complexity.ProfileType.PhoneNumber(childComplexity), true
-
-	case "ProfileType.user":
-		if e.complexity.ProfileType.User == nil {
-			break
-		}
-
-		return e.complexity.ProfileType.User(childComplexity), true
-
-	case "Query.allProfile":
-		if e.complexity.Query.AllProfile == nil {
-			break
-		}
-
-		return e.complexity.Query.AllProfile(childComplexity), true
 
 	case "Query.member":
 		if e.complexity.Query.Member == nil {
@@ -726,12 +707,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserNode.Birthday(childComplexity), true
 
+	case "UserNode.city":
+		if e.complexity.UserNode.City == nil {
+			break
+		}
+
+		return e.complexity.UserNode.City(childComplexity), true
+
+	case "UserNode.country":
+		if e.complexity.UserNode.Country == nil {
+			break
+		}
+
+		return e.complexity.UserNode.Country(childComplexity), true
+
 	case "UserNode.dateJoined":
 		if e.complexity.UserNode.DateJoined == nil {
 			break
 		}
 
 		return e.complexity.UserNode.DateJoined(childComplexity), true
+
+	case "UserNode.district":
+		if e.complexity.UserNode.District == nil {
+			break
+		}
+
+		return e.complexity.UserNode.District(childComplexity), true
 
 	case "UserNode.email":
 		if e.complexity.UserNode.Email == nil {
@@ -823,13 +825,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UserNode.Pk(childComplexity), true
-
-	case "UserNode.profile":
-		if e.complexity.UserNode.Profile == nil {
-			break
-		}
-
-		return e.complexity.UserNode.Profile(childComplexity), true
 
 	case "UserNode.profileImage":
 		if e.complexity.UserNode.ProfileImage == nil {
@@ -992,6 +987,7 @@ enum CustomUserGender {
   A_1
   A_2
   A_0
+  A_3
 }
 
 scalar Date
@@ -1013,22 +1009,24 @@ type MemberType {
   isStaff: Boolean!
   isActive: Boolean!
   dateJoined: DateTime!
-  email: String!
+  email: String
   firebaseId: String
   nickname: String
   name: String
   gender: CustomUserGender!
   phone: String
-  birthday: Date!
+  birthday: Date
+  country: String
+  city: String
+  district: String
   address: String
   isSuperuser: Boolean!
 }
 
 type Mutation {
-  profile: ProfileType
   member: MemberType
   createMember(email: String!, firebaseId: String!, nickname: String): CreateMember
-  updateMember(address: String, birthday: Date, firebaseId: String!, gender: Int, name: String, nickname: String, phone: String, profileImage: String): UpdateMember
+  updateMember(address: String, birthday: Date, city: String, country: String, district: String, firebaseId: String!, gender: Int, name: String, nickname: String, phone: String, profileImage: String): UpdateMember
   deleteMember(firebaseId: String!): DeleteMember
   verifyMember(token: String!): VerifyAccount
   archiveAccount(password: String!): ArchiveAccount
@@ -1054,14 +1052,7 @@ type ObtainJSONWebToken {
   refreshToken: String
 }
 
-type ProfileType {
-  user: MemberType!
-  bio: String!
-  phoneNumber: String!
-}
-
 type Query {
-  allProfile: [ProfileType]
   member(firebaseId: String!): MemberType
 }
 
@@ -1103,16 +1094,18 @@ type UserNode implements Node {
   isStaff: Boolean!
   isActive: Boolean!
   dateJoined: DateTime!
-  email: String!
+  email: String
   firebaseId: String
   nickname: String
   name: String
   gender: CustomUserGender!
   phone: String
-  birthday: Date!
+  birthday: Date
+  country: String
+  city: String
+  district: String
   address: String
   profileImage: String
-  profile: ProfileType
   pk: Int
   archived: Boolean
   verified: Boolean
@@ -1328,60 +1321,87 @@ func (ec *executionContext) field_Mutation_updateMember_args(ctx context.Context
 		}
 	}
 	args["birthday"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["firebaseId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firebaseId"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg2 *string
+	if tmp, ok := rawArgs["city"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("city"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["firebaseId"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["gender"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	args["city"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["country"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("country"))
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["gender"] = arg3
+	args["country"] = arg3
 	var arg4 *string
-	if tmp, ok := rawArgs["name"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["district"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("district"))
 		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg4
-	var arg5 *string
-	if tmp, ok := rawArgs["nickname"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nickname"))
-		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	args["district"] = arg4
+	var arg5 string
+	if tmp, ok := rawArgs["firebaseId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firebaseId"))
+		arg5, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["nickname"] = arg5
-	var arg6 *string
-	if tmp, ok := rawArgs["phone"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	args["firebaseId"] = arg5
+	var arg6 *int
+	if tmp, ok := rawArgs["gender"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
+		arg6, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["phone"] = arg6
+	args["gender"] = arg6
 	var arg7 *string
-	if tmp, ok := rawArgs["profileImage"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profileImage"))
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["profileImage"] = arg7
+	args["name"] = arg7
+	var arg8 *string
+	if tmp, ok := rawArgs["nickname"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nickname"))
+		arg8, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nickname"] = arg8
+	var arg9 *string
+	if tmp, ok := rawArgs["phone"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
+		arg9, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["phone"] = arg9
+	var arg10 *string
+	if tmp, ok := rawArgs["profileImage"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profileImage"))
+		arg10, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["profileImage"] = arg10
 	return args, nil
 }
 
@@ -1922,14 +1942,11 @@ func (ec *executionContext) _MemberType_email(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MemberType_firebaseId(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
@@ -2120,14 +2137,107 @@ func (ec *executionContext) _MemberType_birthday(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNDate2string(ctx, field.Selections, res)
+	return ec.marshalODate2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MemberType_country(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MemberType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MemberType_city(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MemberType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.City, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MemberType_district(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MemberType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.District, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MemberType_address(ctx context.Context, field graphql.CollectedField, obj *model.MemberType) (ret graphql.Marshaler) {
@@ -2195,38 +2305,6 @@ func (ec *executionContext) _MemberType_isSuperuser(ctx context.Context, field g
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_profile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Profile(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.ProfileType)
-	fc.Result = res
-	return ec.marshalOProfileType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_member(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2325,7 +2403,7 @@ func (ec *executionContext) _Mutation_updateMember(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateMember(rctx, args["address"].(*string), args["birthday"].(*string), args["firebaseId"].(string), args["gender"].(*int), args["name"].(*string), args["nickname"].(*string), args["phone"].(*string), args["profileImage"].(*string))
+		return ec.resolvers.Mutation().UpdateMember(rctx, args["address"].(*string), args["birthday"].(*string), args["city"].(*string), args["country"].(*string), args["district"].(*string), args["firebaseId"].(string), args["gender"].(*int), args["name"].(*string), args["nickname"].(*string), args["phone"].(*string), args["profileImage"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2919,143 +2997,6 @@ func (ec *executionContext) _ObtainJSONWebToken_refreshToken(ctx context.Context
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProfileType_user(ctx context.Context, field graphql.CollectedField, obj *model.ProfileType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ProfileType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.User, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.MemberType)
-	fc.Result = res
-	return ec.marshalNMemberType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐMemberType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProfileType_bio(ctx context.Context, field graphql.CollectedField, obj *model.ProfileType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ProfileType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Bio, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProfileType_phoneNumber(ctx context.Context, field graphql.CollectedField, obj *model.ProfileType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ProfileType",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PhoneNumber, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_allProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AllProfile(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ProfileType)
-	fc.Result = res
-	return ec.marshalOProfileType2ᚕᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_member(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3918,14 +3859,11 @@ func (ec *executionContext) _UserNode_email(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserNode_firebaseId(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
@@ -4116,14 +4054,107 @@ func (ec *executionContext) _UserNode_birthday(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNDate2string(ctx, field.Selections, res)
+	return ec.marshalODate2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserNode_country(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserNode",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserNode_city(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserNode",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.City, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserNode_district(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserNode",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.District, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserNode_address(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
@@ -4188,38 +4219,6 @@ func (ec *executionContext) _UserNode_profileImage(ctx context.Context, field gr
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserNode_profile(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UserNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Profile, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.ProfileType)
-	fc.Result = res
-	return ec.marshalOProfileType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserNode_pk(ctx context.Context, field graphql.CollectedField, obj *model.UserNode) (ret graphql.Marshaler) {
@@ -5803,9 +5802,6 @@ func (ec *executionContext) _MemberType(ctx context.Context, sel ast.SelectionSe
 			}
 		case "email":
 			out.Values[i] = ec._MemberType_email(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "firebaseId":
 			out.Values[i] = ec._MemberType_firebaseId(ctx, field, obj)
 		case "nickname":
@@ -5821,9 +5817,12 @@ func (ec *executionContext) _MemberType(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._MemberType_phone(ctx, field, obj)
 		case "birthday":
 			out.Values[i] = ec._MemberType_birthday(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "country":
+			out.Values[i] = ec._MemberType_country(ctx, field, obj)
+		case "city":
+			out.Values[i] = ec._MemberType_city(ctx, field, obj)
+		case "district":
+			out.Values[i] = ec._MemberType_district(ctx, field, obj)
 		case "address":
 			out.Values[i] = ec._MemberType_address(ctx, field, obj)
 		case "isSuperuser":
@@ -5857,8 +5856,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "profile":
-			out.Values[i] = ec._Mutation_profile(ctx, field)
 		case "member":
 			out.Values[i] = ec._Mutation_member(ctx, field)
 		case "createMember":
@@ -5930,43 +5927,6 @@ func (ec *executionContext) _ObtainJSONWebToken(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var profileTypeImplementors = []string{"ProfileType"}
-
-func (ec *executionContext) _ProfileType(ctx context.Context, sel ast.SelectionSet, obj *model.ProfileType) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, profileTypeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ProfileType")
-		case "user":
-			out.Values[i] = ec._ProfileType_user(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "bio":
-			out.Values[i] = ec._ProfileType_bio(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "phoneNumber":
-			out.Values[i] = ec._ProfileType_phoneNumber(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -5982,17 +5942,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "allProfile":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_allProfile(ctx, field)
-				return res
-			})
 		case "member":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -6207,9 +6156,6 @@ func (ec *executionContext) _UserNode(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "email":
 			out.Values[i] = ec._UserNode_email(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "firebaseId":
 			out.Values[i] = ec._UserNode_firebaseId(ctx, field, obj)
 		case "nickname":
@@ -6225,15 +6171,16 @@ func (ec *executionContext) _UserNode(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._UserNode_phone(ctx, field, obj)
 		case "birthday":
 			out.Values[i] = ec._UserNode_birthday(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "country":
+			out.Values[i] = ec._UserNode_country(ctx, field, obj)
+		case "city":
+			out.Values[i] = ec._UserNode_city(ctx, field, obj)
+		case "district":
+			out.Values[i] = ec._UserNode_district(ctx, field, obj)
 		case "address":
 			out.Values[i] = ec._UserNode_address(ctx, field, obj)
 		case "profileImage":
 			out.Values[i] = ec._UserNode_profileImage(ctx, field, obj)
-		case "profile":
-			out.Values[i] = ec._UserNode_profile(ctx, field, obj)
 		case "pk":
 			out.Values[i] = ec._UserNode_pk(ctx, field, obj)
 		case "archived":
@@ -6603,21 +6550,6 @@ func (ec *executionContext) marshalNCustomUserGender2githubᚗcomᚋmirrorᚑmed
 	return v
 }
 
-func (ec *executionContext) unmarshalNDate2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalString(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNDate2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNDateTime2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6646,16 +6578,6 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNMemberType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐMemberType(ctx context.Context, sel ast.SelectionSet, v *model.MemberType) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._MemberType(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -7034,53 +6956,6 @@ func (ec *executionContext) marshalOObtainJSONWebToken2ᚖgithubᚗcomᚋmirror�
 		return graphql.Null
 	}
 	return ec._ObtainJSONWebToken(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOProfileType2ᚕᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx context.Context, sel ast.SelectionSet, v []*model.ProfileType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOProfileType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalOProfileType2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐProfileType(ctx context.Context, sel ast.SelectionSet, v *model.ProfileType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ProfileType(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORefreshToken2ᚖgithubᚗcomᚋmirrorᚑmediaᚋapigatewayᚋgraphᚋmodelᚐRefreshToken(ctx context.Context, sel ast.SelectionSet, v *model.RefreshToken) graphql.Marshaler {

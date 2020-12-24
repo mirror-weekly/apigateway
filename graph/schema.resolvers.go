@@ -8,15 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	mgql "github.com/machinebox/graphql"
+	"github.com/machinebox/graphql"
 	"github.com/mirror-media/apigateway/graph/generated"
 	"github.com/mirror-media/apigateway/graph/model"
-	"github.com/shurcooL/graphql"
 )
-
-func (r *mutationResolver) Profile(ctx context.Context) (*model.ProfileType, error) {
-	panic(fmt.Errorf("not implemented"))
-}
 
 func (r *mutationResolver) Member(ctx context.Context) (*model.MemberType, error) {
 	panic(fmt.Errorf("not implemented"))
@@ -27,67 +22,72 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 		return nil, err
 	}
 
-	// Ask User service to delete the member
-	gqlClient := graphql.NewClient(r.Resolver.UserSrvURL, nil)
+	// Construct GraphQL mutation
+	preloads := GetPreloads(ctx)
+	preGQL := []string{"mutation($email: String!, $firebaseId: String!, $nickname: String) {", "createMember(email: $email, firebaseId: $firebaseId, nickname: $nickname) {"}
 
-	var mutation struct {
-		CreateMember struct {
-			Success *graphql.Boolean
-			Msg     *graphql.String
-		} `graphql:"createMember(email: $email, firebaseId: $firebaseId, nickname: $nickname)"`
+	fieldsOnly := Map(preloads, func(s string) string {
+		ns := strings.Split(s, ".")
+		return ns[len(ns)-1]
+	})
+
+	preGQL = append(preGQL, fieldsOnly...)
+	preGQL = append(preGQL, "}", "}")
+	gql := strings.Join(preGQL, "\n")
+
+	req := graphql.NewRequest(gql)
+	req.Var("firebaseId", firebaseID)
+	req.Var("email", email)
+	req.Var("nickname", nickname)
+
+	// Ask User service to create the member
+	var resp struct {
+		CreateMember *model.CreateMember `json:"createMember"`
 	}
+	err := graphql.NewClient(r.Resolver.UserSrvURL).Run(ctx, req, &resp)
 
-	variables := map[string]interface{}{
-		"email":      graphql.String(email),
-		"firebaseId": graphql.String(firebaseID),
-		"nickname":   (*graphql.String)(nickname),
-	}
-
-	err := gqlClient.Mutate(context.Background(), &mutation, variables)
-
-	return &model.CreateMember{
-		Success: (*bool)(mutation.CreateMember.Success),
-		Msg:     (*string)(mutation.CreateMember.Msg),
-	}, err
+	return resp.CreateMember, err
 }
 
-func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, birthday *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error) {
+func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, birthday *string, city *string, country *string, district *string, firebaseID string, gender *int, name *string, nickname *string, phone *string, profileImage *string) (*model.UpdateMember, error) {
 	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
 
-	// Ask User service to delete the member
-	gqlClient := graphql.NewClient(r.Resolver.UserSrvURL, nil)
+	// Construct GraphQL mutation
+	preloads := GetPreloads(ctx)
+	preGQL := []string{"mutation($address: String, $birthday: Date, $city: String, $country: String, $district: String, $firebaseId: String!, $gender: Int, $name: String, $nickname: String, $phone: String, $profileImage: String) {", "updateMember(address: $address, birthday: $birthday, city: $city, country: $country, district: $district, firebaseId: $firebaseId, gender: $gender, name: $name, nickname: $nickname, phone: $phone, profileImage: $profileImage) {"}
 
-	var mutation struct {
-		UpdateMember struct {
-			Success *graphql.Boolean
-		} `graphql:"createMember(address: $address, birthday: $birthday, firebaseId: $firebaseId, gender: $gender, name: $name, nickname: $nickname, phone: $phone, profileImage: $profileImage)"`
+	fieldsOnly := Map(preloads, func(s string) string {
+		ns := strings.Split(s, ".")
+		return ns[len(ns)-1]
+	})
+
+	preGQL = append(preGQL, fieldsOnly...)
+	preGQL = append(preGQL, "}", "}")
+	gql := strings.Join(preGQL, "\n")
+
+	req := graphql.NewRequest(gql)
+	req.Var("firebaseId", firebaseID)
+	req.Var("address", address)
+	req.Var("birthday", birthday)
+	req.Var("city", city)
+	req.Var("country", country)
+	req.Var("district", district)
+	req.Var("firebaseId", firebaseID)
+	req.Var("gender", gender)
+	req.Var("name", name)
+	req.Var("nickname", nickname)
+	req.Var("phone", phone)
+	req.Var("profileImage", profileImage)
+
+	// Ask User service to update the member
+	var resp struct {
+		UpdateMember *model.UpdateMember `json:"updateMember"`
 	}
+	err := graphql.NewClient(r.Resolver.UserSrvURL).Run(ctx, req, &resp)
 
-	// Type conversion
-	var gReference *int32
-	if gender != nil {
-		g := int32(*gender)
-		gReference = &g
-	}
-
-	variables := map[string]interface{}{
-		"address":      (*graphql.String)(address),
-		"birthday":     (*graphql.String)(birthday),
-		"firebaseID":   (graphql.String)(firebaseID),
-		"gender":       (*graphql.Int)((*int32)(gReference)),
-		"name":         (*graphql.String)(name),
-		"nickname":     (*graphql.String)(nickname),
-		"phone":        (*graphql.String)(phone),
-		"profileImage": (*graphql.String)(profileImage),
-	}
-
-	err := gqlClient.Mutate(context.Background(), &mutation, variables)
-
-	return &model.UpdateMember{
-		Success: (*bool)(mutation.UpdateMember.Success),
-	}, err
+	return resp.UpdateMember, err
 }
 
 func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) (*model.DeleteMember, error) {
@@ -101,28 +101,35 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	}
 
 	err = client.DeleteUser(ctx, firebaseID)
+
+	// WIP remove the request and use pub/sub
 	if err != nil {
 		return nil, err
 	}
 
+	// Construct GraphQL mutation
+	preloads := GetPreloads(ctx)
+	preGQL := []string{"mutation($firebaseId: String!) {", "deleteMember(firebaseId: $firebaseId) {"}
+
+	fieldsOnly := Map(preloads, func(s string) string {
+		ns := strings.Split(s, ".")
+		return ns[len(ns)-1]
+	})
+
+	preGQL = append(preGQL, fieldsOnly...)
+	preGQL = append(preGQL, "}", "}")
+	gql := strings.Join(preGQL, "\n")
+
+	req := graphql.NewRequest(gql)
+	req.Var("firebaseId", firebaseID)
+
 	// Ask User service to delete the member
-	gqlClient := graphql.NewClient(r.Resolver.UserSrvURL, nil)
-
-	var mutation struct {
-		DeleteMember struct {
-			Success graphql.Boolean
-		} `graphql:"deleteMember(firebaseId: $firebaseId)"`
+	var resp struct {
+		DeleteMember *model.DeleteMember `json:"deleteMember"`
 	}
+	err = graphql.NewClient(r.Resolver.UserSrvURL).Run(ctx, req, &resp)
 
-	variables := map[string]interface{}{
-		"firebaseId": graphql.String(firebaseID),
-	}
-	err = gqlClient.Mutate(context.Background(), &mutation, variables)
-
-	deleteMember := &model.DeleteMember{
-		Success: (*bool)(&mutation.DeleteMember.Success),
-	}
-	return deleteMember, err
+	return resp.DeleteMember, err
 }
 
 func (r *mutationResolver) VerifyMember(ctx context.Context, token string) (*model.VerifyAccount, error) {
@@ -161,19 +168,14 @@ func (r *mutationResolver) RevokeToken(ctx context.Context, refreshToken string)
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) AllProfile(ctx context.Context) ([]*model.ProfileType, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.MemberType, error) {
-
 	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
 
 	preloads := GetPreloads(ctx)
 
-	client := mgql.NewClient(r.Resolver.UserSrvURL)
+	client := graphql.NewClient(r.Resolver.UserSrvURL)
 
 	// Construct GraphQL Query
 	preGQL := []string{"query ($firebaseId: String!) {", "member(firebaseId: $firebaseId) {"}
@@ -188,7 +190,7 @@ func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.M
 	gql := strings.Join(preGQL, "\n")
 
 	// Do the query
-	req := mgql.NewRequest(gql)
+	req := graphql.NewRequest(gql)
 	req.Var("firebaseId", firebaseID)
 	var member struct {
 		Member *model.MemberType `json:"member"`
