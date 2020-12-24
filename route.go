@@ -97,6 +97,7 @@ func VerifyIDToken(server *Server) gin.HandlerFunc {
 
 		c.Set("IDTokenState", "OK")
 		c.Set("UserID", token.Subject)
+		c.Next()
 	}
 }
 
