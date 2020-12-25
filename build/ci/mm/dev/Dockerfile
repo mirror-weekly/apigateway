@@ -14,6 +14,7 @@ WORKDIR /api-gateway
 
 COPY --from=build /api-gateway/bin/ .
 COPY firebaseCredential.json .
+COPY config.yaml .
 
 EXPOSE 8080
 CMD ["./apigateway"]

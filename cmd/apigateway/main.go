@@ -1,20 +1,33 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/mirror-media/apigateway"
 	"github.com/mirror-media/apigateway/config"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 func main() {
 
-	// TODO move configs to external config file
-	cfg := config.Conf{
-		Address:                    "0.0.0.0",
-		FirebaseCredentialFilePath: "./firebaseCredential.json",
-		Port:                       8080,
-		V0RESTfulSrvTargetUrl:      "http://104.199.190.189:8080",
+	// name of config file (without extension)
+	viper.SetConfigName("config")
+	// optionally look for config in the working directory
+	viper.AddConfigPath(".")
+	// Find and read the config file
+	err := viper.ReadInConfig()
+	// Handle errors reading the config file
+	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %s", err))
 	}
+
+	var cfg config.Conf
+	err = viper.Unmarshal(&cfg)
+	if err != nil {
+		panic(fmt.Errorf("unable to decode into struct, %v", err))
+	}
+
 	server, err := apigateway.NewServer(cfg)
 	if err != nil {
 		return

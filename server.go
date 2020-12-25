@@ -5,16 +5,23 @@ import (
 	"fmt"
 
 	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/mirror-media/apigateway/config"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 )
 
+type ServiceEndpoints struct {
+	UserGraphQL string
+}
+
 type Server struct {
-	conf        *config.Conf
-	Engine      *gin.Engine
-	FirebaseApp *firebase.App
+	conf           *config.Conf
+	Engine         *gin.Engine
+	FirebaseApp    *firebase.App
+	FirebaseClient *auth.Client
+	Services       *ServiceEndpoints
 }
 
 func init() {
@@ -36,10 +43,19 @@ func NewServer(c config.Conf) (*Server, error) {
 		return nil, fmt.Errorf("error initializing app: %v", err)
 	}
 
+	firebaseClient, err := app.Auth(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("initialization of Firebase Auth Client encountered error: %s", err.Error())
+	}
+
 	s := &Server{
-		conf:        &c,
-		Engine:      engine,
-		FirebaseApp: app,
+		conf:           &c,
+		Engine:         engine,
+		FirebaseApp:    app,
+		FirebaseClient: firebaseClient,
+		Services: &ServiceEndpoints{
+			UserGraphQL: c.ServiceEndpoints.UserGraphQL,
+		},
 	}
 	return s, nil
 }
