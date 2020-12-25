@@ -29,6 +29,15 @@ pipeline:
       event: [push]
       branch: [dev]
 
+  copyMainDockerfile:
+    image: gcr.io/mirrormedia-1470651750304/drone-cloud-sdk:latest
+    secrets: [google_credentials]
+    commands:
+      - cp ./build/ci/mm/main/Dockerfile ./
+    when:
+      event: [push]
+      branch: [main]
+
   buildThenPublish:
     image: plugins/gcr
     repo: mirrormedia-1470651750304/${DRONE_REPO_NAME}
