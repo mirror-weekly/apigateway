@@ -75,7 +75,7 @@ pipeline:
     when:
       status: [success, failure]
       event: [push]
-      branch: [dev]
+      branch: [main, dev]
     template: >
       {{#success build.status}}
         *success* ${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER} was well served.
