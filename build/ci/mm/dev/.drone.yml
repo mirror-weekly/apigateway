@@ -24,7 +24,7 @@ pipeline:
       - cp ./gcr_configs/mirror-media/mm-apigateway/dev/firebaseCredential.json ./firebaseCredential.json
       - cp ./gcr_configs/mirror-media/mm-apigateway/dev/.kube.yml ./.kube.yml
       - rm -rf gcr_configs
-      - cp ./build/ci/dev/Dockerfile ./
+      - cp ./build/ci/mm/dev/Dockerfile ./
     when:
       event: [push]
       branch: [dev]
