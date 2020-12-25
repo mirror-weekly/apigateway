@@ -13,8 +13,9 @@ pipeline:
 
     when:
       event: [push]
-      branch: [dev]
-  getConfig:
+      branch: [master, dev]
+
+  getDevConfig:
     image: gcr.io/mirrormedia-1470651750304/drone-cloud-sdk:latest
     secrets: [google_credentials]
     commands:
@@ -23,6 +24,7 @@ pipeline:
       - cp ./gcr_configs/mirror-media/mm-apigateway/dev/firebaseCredential.json ./firebaseCredential.json
       - cp ./gcr_configs/mirror-media/mm-apigateway/dev/.kube.yml ./.kube.yml
       - rm -rf gcr_configs
+      - cp ./build/ci/dev/Dockerfile ./
     when:
       event: [push]
       branch: [dev]
@@ -36,7 +38,7 @@ pipeline:
     secrets: [google_credentials]
     when:
       event: [push]
-      branch: [dev]
+      branch: [master, dev]
 
   deploy:
     image: nytimes/drone-gke
