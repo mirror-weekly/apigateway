@@ -13,7 +13,7 @@ pipeline:
 
     when:
       event: [push]
-      branch: [master, dev]
+      branch: [main, dev]
 
   getDevConfig:
     image: gcr.io/mirrormedia-1470651750304/drone-cloud-sdk:latest
@@ -38,7 +38,7 @@ pipeline:
     secrets: [google_credentials]
     when:
       event: [push]
-      branch: [master, dev]
+      branch: [main, dev]
 
   deploy:
     image: nytimes/drone-gke
