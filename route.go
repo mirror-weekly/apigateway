@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -222,6 +223,20 @@ type Error struct {
 type ErrorReply struct {
 	Errors []Error     `json:"errors,omitempty"`
 	Data   interface{} `json:"data,omitempty"`
+}
+
+func SetHealthRoute(server *Server) error {
+
+	if server.conf == nil || server.FirebaseApp == nil {
+		return errors.New("config or firebase app is nil")
+	}
+
+	router := server.Engine
+	router.GET("/health", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusOK)
+	})
+
+	return nil
 }
 
 // SetRoute sets the routing for the gin engine
