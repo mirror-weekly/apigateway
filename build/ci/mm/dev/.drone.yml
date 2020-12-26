@@ -29,6 +29,19 @@ pipeline:
       event: [push]
       branch: [dev]
 
+  copyMainDockerfile:
+    image: gcr.io/mirrormedia-1470651750304/drone-cloud-sdk:latest
+    secrets: [google_credentials]
+    commands:
+      - gcloud source repos clone configs gcr_configs
+      - cp ./gcr_configs/mirror-media/mm-apigateway/staging/config.yaml ./config.yaml
+      - cp ./gcr_configs/mirror-media/mm-apigateway/staging/firebaseCredential.json ./firebaseCredential.json
+      - rm -rf gcr_configs
+      - cp ./build/ci/mm/main/Dockerfile ./
+    when:
+      event: [push]
+      branch: [main]
+
   buildThenPublish:
     image: plugins/gcr
     repo: mirrormedia-1470651750304/${DRONE_REPO_NAME}
@@ -66,7 +79,7 @@ pipeline:
     when:
       status: [success, failure]
       event: [push]
-      branch: [dev]
+      branch: [main, dev]
     template: >
       {{#success build.status}}
         *success* ${DRONE_REPO_NAME}:${DRONE_BRANCH}_${DRONE_COMMIT_AUTHOR}_${DRONE_BUILD_NUMBER} was well served.

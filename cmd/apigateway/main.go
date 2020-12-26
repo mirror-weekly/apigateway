@@ -30,16 +30,23 @@ func main() {
 
 	server, err := apigateway.NewServer(cfg)
 	if err != nil {
-		return
+		panic(err)
+	}
+	err = apigateway.SetHealthRoute(server)
+	if err != nil {
+		log.Fatalf("error setting up health route: %v", err)
+		panic(err)
 	}
 
 	err = apigateway.SetRoute(server)
 	if err != nil {
 		log.Fatalf("error setting up route: %v", err)
+		panic(err)
 	}
 
 	err = server.Run()
 	if err != nil {
 		log.Fatalf("error runing server: %v", err)
+		panic(err)
 	}
 }
