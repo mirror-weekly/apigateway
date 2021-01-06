@@ -92,7 +92,8 @@ func NewFirebaseToken(authHeader *string, client *auth.Client) (Token, error) {
 		tokenString = &s
 	}
 	firebaseToken := &FirebaseToken{
-		tokenString: tokenString,
+		firebaseClient: client,
+		tokenString:    tokenString,
 		tokenState: firebaseTokenState{
 			state: state,
 		},
