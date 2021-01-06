@@ -236,9 +236,15 @@ func SetRoute(server *Server) error {
 	v1Router := apiRouter.Group("/v1")
 	v1tokenStateRouter := v1Router.Use(GetIDTokenOnly(server))
 	v1tokenStateRouter.GET("/tokenState", func(c *gin.Context) {
-		state, _ := c.Get("IDTokenState")
+		t := c.Value(middleware.GCtxTokenKey).(token.Token)
+		if t == nil {
+			c.JSON(http.StatusBadRequest, Reply{
+				TokenState: nil,
+			})
+			return
+		}
 		c.JSON(http.StatusOK, Reply{
-			TokenState: state,
+			TokenState: t.GetTokenState(),
 		})
 	})
 
