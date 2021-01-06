@@ -53,9 +53,8 @@ func AuthenticateIDToken(server *Server) gin.HandlerFunc {
 		})
 		// Create a Token Instance
 		t := c.Value(middleware.GCtxTokenKey)
-		var err error
 		if t == nil {
-			err = errors.New("no token provided")
+			err := errors.New("no token provided")
 			logger.Info(err)
 			c.AbortWithStatusJSON(http.StatusForbidden, ErrorReply{
 				Errors: []Error{{Message: err.Error()}},
@@ -65,9 +64,9 @@ func AuthenticateIDToken(server *Server) gin.HandlerFunc {
 		tt := t.(token.Token)
 
 		if tt.GetTokenState() != token.OK {
-			logger.Info(err)
+			logger.Info(tt.GetTokenState())
 			c.AbortWithStatusJSON(http.StatusForbidden, ErrorReply{
-				Errors: []Error{{Message: err.Error()}},
+				Errors: []Error{{Message: tt.GetTokenState()}},
 			})
 			return
 		}
