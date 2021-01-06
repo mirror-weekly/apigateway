@@ -56,6 +56,7 @@ func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
 		_, err := ft.firebaseClient.VerifyIDTokenAndCheckRevoked(ctx, *ft.tokenString)
 		if err != nil {
 			ft.tokenState.setState(err.Error())
+			return
 		}
 		ft.tokenState.setState(OK)
 	}()
