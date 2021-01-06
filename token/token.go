@@ -33,7 +33,7 @@ type firebaseTokenState struct {
 }
 
 func (ftt *firebaseTokenState) setState(state string) {
-	*ftt.state = state
+	ftt.state = &state
 }
 
 func (ft *FirebaseToken) GetTokenString() (string, error) {
@@ -81,11 +81,14 @@ func NewFirebaseToken(authHeader *string, client *auth.Client) (Token, error) {
 	const BearerSchema = "Bearer "
 	var state, tokenString *string
 	if authHeader == nil || *authHeader == "" {
-		*state = "authorization header is not provided"
+		s := "authorization header is not provided"
+		state = &s
 	} else if !strings.HasPrefix(*authHeader, BearerSchema) {
-		*state = "Not a Bearer token"
+		s := "Not a Bearer token"
+		state = &s
 	} else {
-		*tokenString = (*authHeader)[len(BearerSchema):]
+		s := (*authHeader)[len(BearerSchema):]
+		tokenString = &s
 	}
 	firebaseToken := &FirebaseToken{
 		tokenString: tokenString,
