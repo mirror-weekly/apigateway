@@ -18,6 +18,8 @@ type Conf struct {
 	Port                       int
 	V0RESTfulSrvTargetURL      string
 	ServiceEndpoints           ServiceEndpoints
+	ProjectID                  string
+	TokenSecretName            string
 }
 
 func (c *Conf) Valid() bool {
