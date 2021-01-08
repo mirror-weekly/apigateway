@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"os"
 
 	apigateway "github.com/mirror-media/mm-apigateway"
 	"github.com/mirror-media/mm-apigateway/config"
@@ -19,29 +19,32 @@ func main() {
 	err := viper.ReadInConfig()
 	// Handle errors reading the config file
 	if err != nil {
-		panic(fmt.Errorf("fatal error config file: %s", err))
+		log.Fatalf("fatal error config file: %s", err)
+		os.Exit(1)
 	}
 
 	var cfg config.Conf
 	err = viper.Unmarshal(&cfg)
 	if err != nil {
-		panic(fmt.Errorf("unable to decode into struct, %v", err))
+		log.Fatalf("unable to decode into struct, %v", err)
+		os.Exit(1)
 	}
 
 	server, err := apigateway.NewServer(cfg)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 	err = apigateway.SetHealthRoute(server)
 	if err != nil {
 		log.Fatalf("error setting up health route: %v", err)
-		panic(err)
+		os.Exit(1)
 	}
 
 	err = apigateway.SetRoute(server)
 	if err != nil {
 		log.Fatalf("error setting up route: %v", err)
-		panic(err)
+		os.Exit(1)
 	}
 
 	err = server.Run()
