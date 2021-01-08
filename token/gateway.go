@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/dgrijalva/jwt-go/v4"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
@@ -168,6 +168,7 @@ func NewGatewayToken(tokenSecretName string, projectID string) (*Gateway, error)
 
 	versionFragments := strings.Split(v.Name, "/")
 	version := versionFragments[len(versionFragments)-1]
+	log.Infof("Using gateway token version:%s", version)
 
 	g := Gateway{
 		secretVersion: &version,
