@@ -44,7 +44,7 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 	var resp struct {
 		CreateMember *model.CreateMember `json:"createMember"`
 	}
-	err := graphql.NewClient(r.Resolver.UserSrvURL).Run(ctx, req, &resp)
+	err := r.Client.Run(ctx, req, &resp)
 
 	return resp.CreateMember, err
 }
@@ -85,7 +85,7 @@ func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, bi
 	var resp struct {
 		UpdateMember *model.UpdateMember `json:"updateMember"`
 	}
-	err := graphql.NewClient(r.Resolver.UserSrvURL).Run(ctx, req, &resp)
+	err := r.Client.Run(ctx, req, &resp)
 
 	return resp.UpdateMember, err
 }
@@ -127,7 +127,7 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	var resp struct {
 		DeleteMember *model.DeleteMember `json:"deleteMember"`
 	}
-	err = graphql.NewClient(r.Resolver.UserSrvURL).Run(ctx, req, &resp)
+	err = r.Client.Run(ctx, req, &resp)
 
 	return resp.DeleteMember, err
 }
@@ -175,8 +175,6 @@ func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.M
 
 	preloads := GetPreloads(ctx)
 
-	client := graphql.NewClient(r.Resolver.UserSrvURL)
-
 	// Construct GraphQL Query
 	preGQL := []string{"query ($firebaseId: String!) {", "member(firebaseId: $firebaseId) {"}
 
@@ -195,7 +193,7 @@ func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.M
 	var member struct {
 		Member *model.MemberType `json:"member"`
 	}
-	err := client.Run(ctx, req, &member)
+	err := r.Client.Run(ctx, req, &member)
 
 	return member.Member, err
 }
