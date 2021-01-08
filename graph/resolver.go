@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/99designs/gqlgen/graphql"
+	graphql99 "github.com/99designs/gqlgen/graphql"
+	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
 	log "github.com/sirupsen/logrus"
 
@@ -18,6 +19,8 @@ import (
 
 type Resolver struct {
 	UserSrvURL string
+	// Token      token.Token
+	Client *graphql.Client
 }
 
 func (r Resolver) IsRequestMatchingRequesterFirebaseID(ctx context.Context, userID string) (bool, error) {
@@ -72,17 +75,17 @@ func FirebaseClientFromContext(ctx context.Context) (*auth.Client, error) {
 
 func GetPreloads(ctx context.Context) []string {
 	return GetNestedPreloads(
-		graphql.GetOperationContext(ctx),
-		graphql.CollectFieldsCtx(ctx, nil),
+		graphql99.GetOperationContext(ctx),
+		graphql99.CollectFieldsCtx(ctx, nil),
 		"",
 	)
 }
 
-func GetNestedPreloads(ctx *graphql.OperationContext, fields []graphql.CollectedField, prefix string) (preloads []string) {
+func GetNestedPreloads(ctx *graphql99.OperationContext, fields []graphql99.CollectedField, prefix string) (preloads []string) {
 	for _, column := range fields {
 		prefixColumn := GetPreloadString(prefix, column.Name)
 		preloads = append(preloads, prefixColumn)
-		preloads = append(preloads, GetNestedPreloads(ctx, graphql.CollectFields(ctx, column.Selections, nil), prefixColumn)...)
+		preloads = append(preloads, GetNestedPreloads(ctx, graphql99.CollectFields(ctx, column.Selections, nil), prefixColumn)...)
 	}
 	return
 }

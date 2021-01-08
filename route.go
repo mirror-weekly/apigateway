@@ -13,8 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
 	"github.com/mirror-media/mm-apigateway/token"
+	"golang.org/x/oauth2"
 
 	log "github.com/sirupsen/logrus"
 
@@ -76,7 +78,14 @@ func AuthenticateIDToken(server *Server) gin.HandlerFunc {
 		// Because GetTokenState() already fetch the public key and cache it. Here VerifyIDToken() would only verify the signature.
 		firebaseClient := server.FirebaseClient
 		tokenString, _ := tt.GetTokenString()
-		idToken, _ := firebaseClient.VerifyIDToken(ctx, tokenString)
+		idToken, err := firebaseClient.VerifyIDToken(ctx, tokenString)
+		if err != nil {
+			logger.Info(err.Error())
+			c.AbortWithStatusJSON(http.StatusForbidden, ErrorReply{
+				Errors: []Error{{Message: err.Error()}},
+			})
+			return
+		}
 		c.Set(middleware.GCtxUserIDKey, idToken.Subject)
 		c.Next()
 	}
@@ -252,6 +261,19 @@ func SetRoute(server *Server) error {
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 		UserSrvURL: server.conf.ServiceEndpoints.UserGraphQL,
+		// Token:      server.UserSrvToken,
+		// TODO Temp workaround
+		Client: func() *graphql.Client {
+			token, err := server.UserSrvToken.GetTokenString()
+			if err != nil {
+				panic(err)
+			}
+			src := oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: token},
+			)
+			httpClient := oauth2.NewClient(context.Background(), src)
+			return graphql.NewClient(server.Services.UserGraphQL, graphql.WithHTTPClient(httpClient))
+		}(),
 	}}))
 	v1TokenAuthenticatedWithFirebaseRouter.POST("/graphql/user", gin.WrapH(srv))
 
