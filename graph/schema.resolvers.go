@@ -107,10 +107,12 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 
 	err = member.Delete(ctx, r.Conf, client, firebaseID)
 	if err != nil {
+		err = errors.WithMessagef(err, "Failed to delete Firebase User(%s)", firebaseID)
 		log.Error(err)
 		return nil, err
 	}
 	Success := true
+	log.Infof("Successfully deleted Firebase user(%s)", firebaseID)
 	return &model.DeleteMember{
 		Success: &Success,
 	}, err
