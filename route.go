@@ -265,14 +265,14 @@ func SetRoute(server *Server) error {
 		// Token:      server.UserSrvToken,
 		// TODO Temp workaround
 		Client: func() *graphql.Client {
-			token, err := server.UserSrvToken.GetTokenString()
+			tokenString, err := server.UserSrvToken.GetTokenString()
 			if err != nil {
 				panic(err)
 			}
 			src := oauth2.StaticTokenSource(
 				&oauth2.Token{
-					AccessToken: token,
-					TokenType:   "JWT",
+					AccessToken: tokenString,
+					TokenType:   token.TypeJWT,
 				},
 			)
 			httpClient := oauth2.NewClient(context.Background(), src)

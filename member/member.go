@@ -114,14 +114,14 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 	cm := make(chan *pubsub.Message)
 	defer close(cm)
 
-	token, err := userSrvToken.GetTokenString()
+	tokenString, err := userSrvToken.GetTokenString()
 	if err != nil {
 		panic(err)
 	}
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{
-			AccessToken: token,
-			TokenType:   "JWT",
+			AccessToken: tokenString,
+			TokenType:   token.TypeJWT,
 		},
 	)
 	httpClient := oauth2.NewClient(context.Background(), src)
