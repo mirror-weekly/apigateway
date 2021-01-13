@@ -1,3 +1,4 @@
+// Package member defines the member related functions
 package member
 
 import (
@@ -16,6 +17,14 @@ import (
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/token"
 	"github.com/pkg/errors"
+)
+
+const (
+	MsgAttrKeyAction     = "action"
+	MsgAttrKeyFirebaseID = "firebaseID"
+)
+const (
+	MsgAttrValueDelete = "delete"
 )
 
 // Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
@@ -76,8 +85,8 @@ func publishDeleteMemberMessage(parent context.Context, projectID string, topicI
 	t := client.Topic(topicID)
 	result := t.Publish(ctx, &pubsub.Message{
 		Attributes: map[string]string{
-			"firebaseID": firebaseID,
-			"action":     "delete",
+			MsgAttrKeyFirebaseID: firebaseID,
+			MsgAttrKeyAction:     MsgAttrValueDelete,
 		},
 	})
 	// Block until the result is returned and a server-generated
@@ -121,11 +130,11 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 	// Handle individual messages in a goroutine.
 	go func() {
 		for msg := range cm {
-			firebaseID := msg.Attributes["firebaseID"]
-			log.Infof("Got message to %s member: %s", msg.Attributes["action"], firebaseID)
+			firebaseID := msg.Attributes[MsgAttrKeyFirebaseID]
+			log.Infof("Got message to %s member: %s", msg.Attributes[MsgAttrKeyAction], firebaseID)
 
-			switch msg.Attributes["action"] {
-			case "delete":
+			switch msg.Attributes[MsgAttrKeyAction] {
+			case MsgAttrValueDelete:
 				log.Infof("Request Saleor-mirror to delete member: %s", firebaseID)
 
 				preGQL := []string{"mutation($firebaseId: String!) {", "deleteMember(firebaseId: $firebaseId) {"}
@@ -135,7 +144,7 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 				gql := strings.Join(preGQL, "\n")
 
 				req := graphql.NewRequest(gql)
-				req.Var("firebaseId", firebaseID)
+				req.Var(MsgAttrKeyFirebaseID, firebaseID)
 
 				// Ask User service to delete the member
 				var resp struct {
@@ -150,7 +159,7 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 				}
 				cancel()
 			default:
-				log.Errorf("action(%s) is not supported", msg.Attributes["action"])
+				log.Errorf("action(%s) is not supported", msg.Attributes[MsgAttrKeyAction])
 			}
 		}
 	}()
