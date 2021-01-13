@@ -18,7 +18,7 @@ type ServiceEndpoints struct {
 }
 
 type Server struct {
-	conf           *config.Conf
+	Conf           *config.Conf
 	Engine         *gin.Engine
 	FirebaseApp    *firebase.App
 	FirebaseClient *auth.Client
@@ -32,7 +32,7 @@ func init() {
 }
 
 func (s *Server) Run() error {
-	return s.Engine.Run(fmt.Sprintf("%s:%d", s.conf.Address, s.conf.Port))
+	return s.Engine.Run(fmt.Sprintf("%s:%d", s.Conf.Address, s.Conf.Port))
 }
 
 func NewServer(c config.Conf) (*Server, error) {
@@ -56,7 +56,7 @@ func NewServer(c config.Conf) (*Server, error) {
 	}
 
 	s := &Server{
-		conf:           &c,
+		Conf:           &c,
 		Engine:         engine,
 		FirebaseApp:    app,
 		FirebaseClient: firebaseClient,
