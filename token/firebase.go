@@ -17,19 +17,15 @@ type FirebaseToken struct {
 }
 
 type firebaseTokenState struct {
-	sync.RWMutex
+	sync.Mutex
 	state *string
 }
 
 func (ftt *firebaseTokenState) setState(state string) {
-	ftt.Lock()
-	defer ftt.Unlock()
 	ftt.state = &state
 }
 
 func (ft *FirebaseToken) GetTokenString() (string, error) {
-	ft.tokenState.RLock()
-	defer ft.tokenState.RUnlock()
 	if ft.tokenString == nil {
 		return "", errors.New("token is nil")
 	}
@@ -37,15 +33,8 @@ func (ft *FirebaseToken) GetTokenString() (string, error) {
 }
 
 func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
-	if err := func() error {
-		ft.tokenState.RLock()
-		defer ft.tokenState.RUnlock()
-		if ft.tokenString == nil {
-			return errors.New("token is nil")
-		}
-		return nil
-	}(); err != nil {
-		return err
+	if ft.tokenString == nil {
+		return errors.New("token is nil")
 	}
 	ft.tokenState.Lock()
 	go func() {
@@ -68,8 +57,8 @@ func (ft *FirebaseToken) GetTokenState() string {
 		ft.ExecuteTokenStateUpdate()
 	}
 
-	ft.tokenState.RLock()
-	defer ft.tokenState.RUnlock()
+	ft.tokenState.Lock()
+	defer ft.tokenState.Unlock()
 	return *ft.tokenState.state
 }
 
