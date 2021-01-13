@@ -18,7 +18,7 @@ type Conf struct {
 	Port                       int
 	ProjectID                  string
 	PubSubSubscribeMember      string
-	PubSubTopicIDDeleteMember  string
+	PubSubTopicMember          string
 	ServiceEndpoints           ServiceEndpoints
 	TokenSecretName            string
 	V0RESTfulSrvTargetURL      string

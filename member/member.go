@@ -35,7 +35,7 @@ func Delete(parent context.Context, c config.Conf, client *auth.Client, firebase
 	if err := deleteFirebaseUser(parent, client, firebaseID); err != nil {
 		return err
 	}
-	go publishDeleteMemberMessage(context.Background(), c.ProjectID, c.PubSubTopicIDDeleteMember, firebaseID)
+	go publishDeleteMemberMessage(context.Background(), c.ProjectID, c.PubSubTopicMember, firebaseID)
 	return nil
 }
 
@@ -71,7 +71,7 @@ func deleteFirebaseUser(parent context.Context, client *auth.Client, firebaseID 
 	return nil
 }
 
-func publishDeleteMemberMessage(parent context.Context, projectID string, topicID string, firebaseID string) error {
+func publishDeleteMemberMessage(parent context.Context, projectID string, topic string, firebaseID string) error {
 
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
@@ -82,7 +82,7 @@ func publishDeleteMemberMessage(parent context.Context, projectID string, topicI
 		return err
 	}
 
-	t := client.Topic(topicID)
+	t := client.Topic(topic)
 	result := t.Publish(ctx, &pubsub.Message{
 		Attributes: map[string]string{
 			MsgAttrKeyFirebaseID: firebaseID,
