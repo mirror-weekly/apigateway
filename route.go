@@ -223,7 +223,7 @@ type ErrorReply struct {
 
 func SetHealthRoute(server *Server) error {
 
-	if server.conf == nil || server.FirebaseApp == nil {
+	if server.Conf == nil || server.FirebaseApp == nil {
 		return errors.New("config or firebase app is nil")
 	}
 
@@ -260,18 +260,19 @@ func SetRoute(server *Server) error {
 	// v1 User
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
-		UserSrvURL: server.conf.ServiceEndpoints.UserGraphQL,
+		Conf:       *server.Conf,
+		UserSrvURL: server.Conf.ServiceEndpoints.UserGraphQL,
 		// Token:      server.UserSrvToken,
 		// TODO Temp workaround
 		Client: func() *graphql.Client {
-			token, err := server.UserSrvToken.GetTokenString()
+			tokenString, err := server.UserSrvToken.GetTokenString()
 			if err != nil {
 				panic(err)
 			}
 			src := oauth2.StaticTokenSource(
 				&oauth2.Token{
-					AccessToken: token,
-					TokenType:   "JWT",
+					AccessToken: tokenString,
+					TokenType:   token.TypeJWT,
 				},
 			)
 			httpClient := oauth2.NewClient(context.Background(), src)
@@ -283,7 +284,7 @@ func SetRoute(server *Server) error {
 	// v0 api proxy every request to the restful serverce
 	v0Router := apiRouter.Group("/v0")
 	v0tokenStateRouter := v0Router.Use(GetIDTokenOnly(server))
-	proxyURL, err := url.Parse(server.conf.V0RESTfulSrvTargetURL)
+	proxyURL, err := url.Parse(server.Conf.V0RESTfulSrvTargetURL)
 	if err != nil {
 		return err
 	}

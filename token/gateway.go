@@ -21,8 +21,8 @@ type Gateway struct {
 	secretVersion          *string
 	tokenString            string
 	parser                 jwt.Parser
-	renewTokenTopicID      string
-	updateTokenTopicID     string
+	renewTokenTopic        string
+	updateTokenTopic       string
 	renewVersionPubChannel chan string
 	updateTokenSubChannel  chan string
 	// client                 *pubsub.Client

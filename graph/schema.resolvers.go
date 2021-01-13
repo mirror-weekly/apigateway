@@ -11,6 +11,9 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/graph/generated"
 	"github.com/mirror-media/mm-apigateway/graph/model"
+	"github.com/mirror-media/mm-apigateway/member"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func (r *mutationResolver) Member(ctx context.Context) (*model.MemberType, error) {
@@ -97,39 +100,20 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	// delete Firebase user
 	client, err := FirebaseClientFromContext(ctx)
 	if err != nil {
+		errors.WithMessage(err, "can't get FirebaseClient from context")
+		log.Error(err)
 		return nil, err
 	}
 
-	err = client.DeleteUser(ctx, firebaseID)
-
-	// WIP remove the request and use pub/sub
+	err = member.Delete(ctx, r.Conf, client, firebaseID)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
-
-	// Construct GraphQL mutation
-	preloads := GetPreloads(ctx)
-	preGQL := []string{"mutation($firebaseId: String!) {", "deleteMember(firebaseId: $firebaseId) {"}
-
-	fieldsOnly := Map(preloads, func(s string) string {
-		ns := strings.Split(s, ".")
-		return ns[len(ns)-1]
-	})
-
-	preGQL = append(preGQL, fieldsOnly...)
-	preGQL = append(preGQL, "}", "}")
-	gql := strings.Join(preGQL, "\n")
-
-	req := graphql.NewRequest(gql)
-	req.Var("firebaseId", firebaseID)
-
-	// Ask User service to delete the member
-	var resp struct {
-		DeleteMember *model.DeleteMember `json:"deleteMember"`
-	}
-	err = r.Client.Run(ctx, req, &resp)
-
-	return resp.DeleteMember, err
+	Success := true
+	return &model.DeleteMember{
+		Success: &Success,
+	}, err
 }
 
 func (r *mutationResolver) VerifyMember(ctx context.Context, token string) (*model.VerifyAccount, error) {

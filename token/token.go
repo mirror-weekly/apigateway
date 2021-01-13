@@ -5,6 +5,8 @@ const (
 	OK = "OK"
 )
 
+const TypeJWT = "JWT"
+
 type Token interface {
 	ExecuteTokenStateUpdate() error
 	GetTokenString() (string, error)
