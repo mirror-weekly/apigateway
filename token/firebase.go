@@ -41,7 +41,7 @@ func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
 		defer ft.tokenState.Unlock()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_, err := ft.firebaseClient.VerifyIDToken(ctx, *ft.tokenString)
+		_, err := ft.firebaseClient.VerifyIDTokenAndCheckRevoked(ctx, *ft.tokenString)
 		if err != nil {
 			ft.tokenState.setState(err.Error())
 			return

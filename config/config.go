@@ -16,10 +16,11 @@ type Conf struct {
 	Address                    string
 	FirebaseCredentialFilePath string
 	Port                       int
-	V0RESTfulSrvTargetURL      string
-	ServiceEndpoints           ServiceEndpoints
 	ProjectID                  string
+	PubSubTopicIDDeleteMember  string
+	ServiceEndpoints           ServiceEndpoints
 	TokenSecretName            string
+	V0RESTfulSrvTargetURL      string
 }
 
 func (c *Conf) Valid() bool {

@@ -6,6 +6,7 @@ import (
 
 	graphql99 "github.com/99designs/gqlgen/graphql"
 	"github.com/machinebox/graphql"
+	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/middleware"
 	log "github.com/sirupsen/logrus"
 
@@ -18,9 +19,10 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	UserSrvURL string
 	// Token      token.Token
-	Client *graphql.Client
+	Client     *graphql.Client
+	Conf       config.Conf
+	UserSrvURL string
 }
 
 func (r Resolver) IsRequestMatchingRequesterFirebaseID(ctx context.Context, userID string) (bool, error) {

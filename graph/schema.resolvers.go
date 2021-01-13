@@ -11,6 +11,9 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/graph/generated"
 	"github.com/mirror-media/mm-apigateway/graph/model"
+	"github.com/mirror-media/mm-apigateway/member"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func (r *mutationResolver) Member(ctx context.Context) (*model.MemberType, error) {
@@ -97,13 +100,14 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	// delete Firebase user
 	client, err := FirebaseClientFromContext(ctx)
 	if err != nil {
+		errors.WithMessage(err, "can't get FirebaseClient from context")
+		log.Error(err)
 		return nil, err
 	}
 
-	err = client.DeleteUser(ctx, firebaseID)
-
-	// WIP remove the request and use pub/sub
+	err = member.Delete(ctx, r.Conf, client, firebaseID)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 

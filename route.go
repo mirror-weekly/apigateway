@@ -260,6 +260,7 @@ func SetRoute(server *Server) error {
 	// v1 User
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
+		Conf:       *server.Conf,
 		UserSrvURL: server.Conf.ServiceEndpoints.UserGraphQL,
 		// Token:      server.UserSrvToken,
 		// TODO Temp workaround

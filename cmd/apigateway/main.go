@@ -58,6 +58,7 @@ func main() {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
+		log.Infof("server listening to %s", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			err = errors.Wrap(shutdown(srv), err.Error())
 			log.Fatalf("listen: %s\n", err)
