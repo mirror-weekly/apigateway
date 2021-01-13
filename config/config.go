@@ -17,6 +17,7 @@ type Conf struct {
 	FirebaseCredentialFilePath string
 	Port                       int
 	ProjectID                  string
+	PubSubSubscribeMember      string
 	PubSubTopicIDDeleteMember  string
 	ServiceEndpoints           ServiceEndpoints
 	TokenSecretName            string

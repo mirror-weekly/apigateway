@@ -110,30 +110,10 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 		log.Error(err)
 		return nil, err
 	}
-
-	// Construct GraphQL mutation
-	preloads := GetPreloads(ctx)
-	preGQL := []string{"mutation($firebaseId: String!) {", "deleteMember(firebaseId: $firebaseId) {"}
-
-	fieldsOnly := Map(preloads, func(s string) string {
-		ns := strings.Split(s, ".")
-		return ns[len(ns)-1]
-	})
-
-	preGQL = append(preGQL, fieldsOnly...)
-	preGQL = append(preGQL, "}", "}")
-	gql := strings.Join(preGQL, "\n")
-
-	req := graphql.NewRequest(gql)
-	req.Var("firebaseId", firebaseID)
-
-	// Ask User service to delete the member
-	var resp struct {
-		DeleteMember *model.DeleteMember `json:"deleteMember"`
-	}
-	err = r.Client.Run(ctx, req, &resp)
-
-	return resp.DeleteMember, err
+	Success := true
+	return &model.DeleteMember{
+		Success: &Success,
+	}, err
 }
 
 func (r *mutationResolver) VerifyMember(ctx context.Context, token string) (*model.VerifyAccount, error) {

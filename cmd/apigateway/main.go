@@ -13,6 +13,7 @@ import (
 
 	apigateway "github.com/mirror-media/mm-apigateway"
 	"github.com/mirror-media/mm-apigateway/config"
+	"github.com/mirror-media/mm-apigateway/member"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -57,13 +58,22 @@ func main() {
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
+
+	subCTX, subCancel := context.WithCancel(context.Background())
+	go func() {
+		// SubscribeDeleteMember block until subCTX is canceled or an error occurs
+		if err = member.SubscribeDeleteMember(subCTX, cfg, server.UserSrvToken); err != nil {
+			err = errors.Wrap(shutdown(srv, subCancel), err.Error())
+			log.Fatalf("error server closed: %s\n", err)
+		}
+	}()
 	go func() {
 		log.Infof("server listening to %s", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			err = errors.Wrap(shutdown(srv), err.Error())
+		if err = srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			err = errors.Wrap(shutdown(srv, nil), err.Error())
 			log.Fatalf("listen: %s\n", err)
 		} else if err != nil {
-			err = errors.Wrap(shutdown(nil), err.Error())
+			err = errors.Wrap(shutdown(nil, nil), err.Error())
 			log.Fatalf("error server closed: %s\n", err)
 		}
 	}()
@@ -77,13 +87,13 @@ func main() {
 	<-quit
 	log.Println("Shutting down server...")
 
-	if err := shutdown(srv); err != nil {
+	if err := shutdown(srv, subCancel); err != nil {
 		log.Fatalf("Server forced to shutdown:", err)
 	}
 	os.Exit(0)
 }
 
-func shutdown(server *http.Server) error {
+func shutdown(server *http.Server, cancelMemberSubscription context.CancelFunc) error {
 	if server != nil {
 		// The context is used to inform the server it has 5 seconds to finish
 		// the request it is currently handling
@@ -92,6 +102,9 @@ func shutdown(server *http.Server) error {
 		if err := server.Shutdown(ctx); err != nil {
 			return err
 		}
+	}
+	if cancelMemberSubscription != nil {
+		cancelMemberSubscription()
 	}
 	return nil
 }
