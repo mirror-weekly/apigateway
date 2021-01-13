@@ -18,7 +18,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/api v0.36.0
-	google.golang.org/genproto v0.0.0-20201201144952-b05cb90ed32e
+	google.golang.org/genproto v0.0.0-20210108203827-ffc7fda8c3d7
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/postgres v1.0.5
 	gorm.io/gorm v1.20.8
