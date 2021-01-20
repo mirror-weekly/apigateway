@@ -9,6 +9,7 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
@@ -129,7 +130,7 @@ func NewGatewayToken(tokenSecretName string, projectID string) (*Gateway, error)
 	ctx := context.Background()
 	c, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		log.Fatalf("failed to setup client: %v", err)
+		err = errors.Wrap(err, "failed to setup client")
 		return nil, err
 	}
 
@@ -141,7 +142,7 @@ func NewGatewayToken(tokenSecretName string, projectID string) (*Gateway, error)
 
 	v, err := c.GetSecretVersion(ctx, req)
 	if err != nil {
-		log.Fatalf("failed to get latest secret version of %s: %v", tokenSecretName, err)
+		err = errors.Wrapf(err, "failed to get latest secret version of %s: %v", tokenSecretName)
 		return nil, err
 	}
 
@@ -151,7 +152,7 @@ func NewGatewayToken(tokenSecretName string, projectID string) (*Gateway, error)
 
 	secret, err := c.AccessSecretVersion(ctx, getSecretReq)
 	if err != nil {
-		log.Fatalf("failed to get latest version of secret data of %s: %v", tokenSecretName, err)
+		err = errors.Wrapf(err, "failed to get latest version of secret data of %s: %v", tokenSecretName)
 		return nil, err
 	}
 
@@ -162,7 +163,7 @@ func NewGatewayToken(tokenSecretName string, projectID string) (*Gateway, error)
 
 	err = json.Unmarshal(secret.GetPayload().GetData(), &tokenSecret)
 	if err != nil {
-		log.Fatalf("cannot unmarshal secret data of %s: %v", tokenSecretName, err)
+		err = errors.Wrapf(err, "cannot unmarshal secret data of %s: %v", tokenSecretName)
 		return nil, err
 	}
 
