@@ -144,7 +144,7 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 				gql := strings.Join(preGQL, "\n")
 
 				req := graphql.NewRequest(gql)
-				req.Var(MsgAttrKeyFirebaseID, firebaseID)
+				req.Var("firebaseId", firebaseID)
 
 				// Ask User service to delete the member
 				var resp struct {
