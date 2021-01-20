@@ -101,7 +101,15 @@ func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
 
 func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseClient, server.FirebaseClient)
+		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseClientKey, server.FirebaseClient)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
+func FirebaseDBClientToContextMiddleware(server *Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseDatabaseClientKey, server.FirebaseDatabaseClient)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
@@ -258,7 +266,8 @@ func SetRoute(server *Server) error {
 
 	// Private API
 	// v1 User
-	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server))
+	// It will save FirebaseClient and FirebaseDBClient to *gin.context, and *gin.context to *context
+	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server), FirebaseDBClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 		Conf:       *server.Conf,
 		UserSrvURL: server.Conf.ServiceEndpoints.UserGraphQL,
