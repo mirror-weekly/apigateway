@@ -14,6 +14,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"firebase.google.com/go/v4/auth"
+	"firebase.google.com/go/v4/db"
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/token"
 	"github.com/pkg/errors"
@@ -28,19 +29,22 @@ const (
 )
 
 // Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
-func Delete(parent context.Context, c config.Conf, client *auth.Client, firebaseID string) error {
-	if err := revokeFirebaseToken(parent, client, firebaseID); err != nil {
+func Delete(parent context.Context, c config.Conf, client *auth.Client, dbClient *db.Client, firebaseID string) error {
+	if err := revokeFirebaseToken(parent, client, dbClient, firebaseID); err != nil {
 		return err
 	}
 	if err := deleteFirebaseUser(parent, client, firebaseID); err != nil {
 		return err
 	}
+
+	// Use an independent context here because I want the publication of message to finish regardless of shutdowning down
 	go publishDeleteMemberMessage(context.Background(), c.ProjectID, c.PubSubTopicMember, firebaseID)
 	return nil
 }
 
-func revokeFirebaseToken(parent context.Context, client *auth.Client, firebaseID string) error {
-	ctx, cancel := context.WithCancel(parent)
+func revokeFirebaseToken(parent context.Context, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
+
+	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
 	if err := client.RevokeRefreshTokens(ctx, firebaseID); err != nil {
 		log.Errorf("error revoking tokens for user: %v, %v", firebaseID, err)
@@ -55,7 +59,13 @@ func revokeFirebaseToken(parent context.Context, client *auth.Client, firebaseID
 	}
 	timestamp := u.TokensValidAfterMillis / 1000
 	log.Printf("the refresh tokens were revoked at: %d (UTC seconds) ", timestamp)
-	return nil
+	// save revoked time metadata for the user
+	if err := dbClient.NewRef("metadata/"+u.UID).Set(ctx, map[string]int64{"revokeTime": timestamp}); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return err
 }
 
 func deleteFirebaseUser(parent context.Context, client *auth.Client, firebaseID string) error {

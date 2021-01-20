@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	graphql99 "github.com/99designs/gqlgen/graphql"
@@ -11,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"firebase.google.com/go/v4/auth"
+	"firebase.google.com/go/v4/db"
 	"github.com/gin-gonic/gin"
 )
 
@@ -64,11 +66,31 @@ func FirebaseClientFromContext(ctx context.Context) (*auth.Client, error) {
 	logger := log.WithFields(log.Fields{
 		"path": gCTX.FullPath(),
 	})
-	firebaseClientCtx := ctx.Value(middleware.CtxFirebaseClient)
+	firebaseClientCtx := ctx.Value(middleware.CtxFirebaseClientKey)
 
 	client, ok := firebaseClientCtx.(*auth.Client)
 	if !ok {
 		err := fmt.Errorf("auth.Client has wrong type")
+		logger.Error(err)
+		return nil, err
+	}
+	return client, nil
+}
+
+func FirebaseDatabaseClientFromContext(ctx context.Context) (*db.Client, error) {
+	gCTX, err := GinContextFromContext(ctx)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	logger := log.WithFields(log.Fields{
+		"path": gCTX.FullPath(),
+	})
+	firebaseDatabaseClientCtx := ctx.Value(middleware.CtxFirebaseDatabaseClientKey)
+
+	client, ok := firebaseDatabaseClientCtx.(*db.Client)
+	if !ok {
+		err := errors.New("db.Client has wrong type")
 		logger.Error(err)
 		return nil, err
 	}

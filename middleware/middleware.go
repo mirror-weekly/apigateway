@@ -5,10 +5,10 @@ type CtxKey string
 const (
 	//CtxGinContexKey is the key of a *gin.Context
 	CtxGinContexKey CtxKey = "CtxGinContext"
-	//CtxFirebaseClient is the key of a *auth.Client
-	CtxFirebaseClient CtxKey = "CtxFirebaseClient"
-	//CtxFirebaseDatabaseClient is the key of a *db.Client
-	CtxFirebaseDatabaseClient CtxKey = "CtxFirebaseDBClient"
+	//CtxFirebaseClientKey is the key of a *auth.Client
+	CtxFirebaseClientKey CtxKey = "CtxFirebaseClient"
+	//CtxFirebaseDatabaseClientKey is the key of a *db.Client
+	CtxFirebaseDatabaseClientKey CtxKey = "CtxFirebaseDBClient"
 )
 const (
 	// GCtxTokenKey is the key of a token.Token in *gin.Context
