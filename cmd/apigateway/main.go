@@ -14,6 +14,7 @@ import (
 	apigateway "github.com/mirror-media/mm-apigateway"
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/member"
+	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -37,8 +38,9 @@ func main() {
 		log.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	server, err := apigateway.NewServer(cfg)
+	server, err := server.NewServer(cfg)
 	if err != nil {
+		err = errors.Wrap(err, "failed to create new server")
 		log.Fatal(err)
 	}
 	err = apigateway.SetHealthRoute(server)

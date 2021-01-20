@@ -15,6 +15,7 @@ import (
 
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
+	"github.com/mirror-media/mm-apigateway/server"
 	"github.com/mirror-media/mm-apigateway/token"
 	"golang.org/x/oauth2"
 
@@ -28,7 +29,7 @@ import (
 )
 
 // GetIDTokenOnly is a middleware to construct the token.Token interface
-func GetIDTokenOnly(server *Server) gin.HandlerFunc {
+func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -48,7 +49,7 @@ func GetIDTokenOnly(server *Server) gin.HandlerFunc {
 }
 
 // AuthenticateIDToken is a middleware to authenticate the request and save the result to the context
-func AuthenticateIDToken(server *Server) gin.HandlerFunc {
+func AuthenticateIDToken(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -91,7 +92,7 @@ func AuthenticateIDToken(server *Server) gin.HandlerFunc {
 	}
 }
 
-func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
+func GinContextToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxGinContexKey, c)
 		c.Request = c.Request.WithContext(ctx)
@@ -99,7 +100,7 @@ func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
 	}
 }
 
-func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
+func FirebaseClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseClientKey, server.FirebaseClient)
 		c.Request = c.Request.WithContext(ctx)
@@ -107,7 +108,7 @@ func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
 	}
 }
 
-func FirebaseDBClientToContextMiddleware(server *Server) gin.HandlerFunc {
+func FirebaseDBClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseDatabaseClientKey, server.FirebaseDatabaseClient)
 		c.Request = c.Request.WithContext(ctx)
@@ -229,7 +230,7 @@ type ErrorReply struct {
 	Data   interface{} `json:"data,omitempty"`
 }
 
-func SetHealthRoute(server *Server) error {
+func SetHealthRoute(server *server.Server) error {
 
 	if server.Conf == nil || server.FirebaseApp == nil {
 		return errors.New("config or firebase app is nil")
