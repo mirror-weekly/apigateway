@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/graph/model"
+	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -28,18 +30,58 @@ const (
 	MsgAttrValueDelete = "delete"
 )
 
-// Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
-func Delete(parent context.Context, c config.Conf, client *auth.Client, dbClient *db.Client, firebaseID string) error {
-	if err := revokeFirebaseToken(parent, client, dbClient, firebaseID); err != nil {
-		return err
-	}
-	if err := deleteFirebaseUser(parent, client, firebaseID); err != nil {
-		return err
-	}
+type Clients struct {
+	sync.Once
+	conf          *config.Conf
+	server        *server.Server
+	graphqlClient *graphql.Client
+}
 
-	// Use an independent context here because I want the publication of message to finish regardless of shutdowning down
-	go publishDeleteMemberMessage(context.Background(), c.ProjectID, c.PubSubTopicMember, firebaseID)
-	return nil
+// FIXME server should be be required
+func (c *Clients) getGraphQLClient(server *server.Server) (graphqlClient *graphql.Client, err error) {
+	c.Do(func() {
+		tokenString, err := server.UserSrvToken.GetTokenString()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		src := oauth2.StaticTokenSource(
+			&oauth2.Token{
+				AccessToken: tokenString,
+				TokenType:   token.TypeJWT,
+			},
+		)
+		httpClient := oauth2.NewClient(context.Background(), src)
+		c.graphqlClient = graphql.NewClient(server.Conf.ServiceEndpoints.UserGraphQL, graphql.WithHTTPClient(httpClient))
+	})
+	if c.graphqlClient == nil {
+		return nil, errors.New("graphqlClient is nil")
+	}
+	return c.graphqlClient, nil
+}
+
+// singleton clients
+var clients Clients
+
+// Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
+func Delete(parent context.Context, server *server.Server, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
+	var graphqlClient *graphql.Client
+	if err = revokeFirebaseToken(parent, client, dbClient, firebaseID); err != nil {
+		return err
+	} else if err = deleteFirebaseUser(parent, client, firebaseID); err != nil {
+		return err
+	} else if graphqlClient, err = clients.getGraphQLClient(server); err != nil {
+		return err
+	} else if err = requestToDeleteMember(server.UserSrvToken, graphqlClient, firebaseID); err != nil {
+		// Use an independent context here because I want the publication of message to finish regardless of shutdowning down
+		c := server.Conf
+		go func() {
+			if err := publishDeleteMemberMessage(context.Background(), c.ProjectID, c.PubSubTopicMember, firebaseID); err != nil {
+				log.Error(err)
+			}
+		}()
+	}
+	return err
 }
 
 func revokeFirebaseToken(parent context.Context, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
@@ -75,7 +117,6 @@ func deleteFirebaseUser(parent context.Context, client *auth.Client, firebaseID 
 	err := client.DeleteUser(ctx, firebaseID)
 	if err != nil {
 		err = errors.WithMessagef(err, "member(%s) deletion failed", firebaseID)
-		log.Error(err)
 		return err
 	}
 	return nil
@@ -88,7 +129,6 @@ func publishDeleteMemberMessage(parent context.Context, projectID string, topic 
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		err = errors.WithMessage(err, "error creating client for pubsub")
-		log.Error(err)
 		return err
 	}
 
@@ -104,7 +144,6 @@ func publishDeleteMemberMessage(parent context.Context, projectID string, topic 
 	id, err := result.Get(ctx)
 	if err != nil {
 		errors.WithMessage(err, "get published message result has error")
-		log.Error(err)
 		return err
 	}
 	log.Printf("Published member deletion message with custom attributes(firebaseID: %s); msg ID: %v", firebaseID, id)
@@ -145,29 +184,9 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 
 			switch msg.Attributes[MsgAttrKeyAction] {
 			case MsgAttrValueDelete:
-				log.Infof("Request Saleor-mirror to delete member: %s", firebaseID)
-
-				preGQL := []string{"mutation($firebaseId: String!) {", "deleteMember(firebaseId: $firebaseId) {"}
-
-				preGQL = append(preGQL, "success")
-				preGQL = append(preGQL, "}", "}")
-				gql := strings.Join(preGQL, "\n")
-
-				req := graphql.NewRequest(gql)
-				req.Var("firebaseId", firebaseID)
-
-				// Ask User service to delete the member
-				var resp struct {
-					DeleteMember *model.DeleteMember `json:"deleteMember"`
-				}
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				if err = graphqlClient.Run(ctx, req, &resp); err == nil {
-					log.Infof("Successfully delete member(%s)", firebaseID)
+				if err := requestToDeleteMember(userSrvToken, graphqlClient, firebaseID); err == nil {
 					msg.Ack()
-				} else {
-					log.Errorf("Fail to delete member(%s):%v", firebaseID, err)
 				}
-				cancel()
 			default:
 				log.Errorf("action(%s) is not supported", msg.Attributes[MsgAttrKeyAction])
 			}
@@ -190,4 +209,30 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 
 	return nil
 
+}
+
+func requestToDeleteMember(userSrvToken token.Token, graphqlClient *graphql.Client, firebaseID string) (err error) {
+	log.Infof("Request Saleor-mirror to delete member: %s", firebaseID)
+
+	preGQL := []string{"mutation($firebaseId: String!) {", "deleteMember(firebaseId: $firebaseId) {"}
+
+	preGQL = append(preGQL, "success")
+	preGQL = append(preGQL, "}", "}")
+	gql := strings.Join(preGQL, "\n")
+
+	req := graphql.NewRequest(gql)
+	req.Var("firebaseId", firebaseID)
+
+	// Ask User service to delete the member
+	var resp struct {
+		DeleteMember *model.DeleteMember `json:"deleteMember"`
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err = graphqlClient.Run(ctx, req, &resp); err == nil {
+		log.Infof("Successfully delete member(%s)", firebaseID)
+	} else {
+		log.Errorf("Fail to delete member(%s):%v", firebaseID, err)
+	}
+	return err
 }

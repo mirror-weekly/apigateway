@@ -245,7 +245,7 @@ func SetHealthRoute(server *server.Server) error {
 }
 
 // SetRoute sets the routing for the gin engine
-func SetRoute(server *Server) error {
+func SetRoute(server *server.Server) error {
 	apiRouter := server.Engine.Group("/api")
 
 	// Public API
@@ -271,6 +271,7 @@ func SetRoute(server *Server) error {
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server), FirebaseDBClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 		Conf:       *server.Conf,
+		Server:     server,
 		UserSrvURL: server.Conf.ServiceEndpoints.UserGraphQL,
 		// Token:      server.UserSrvToken,
 		// TODO Temp workaround
