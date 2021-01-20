@@ -112,7 +112,7 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 		return nil, err
 	}
 
-	err = member.Delete(ctx, r.Conf, client, dbClient, firebaseID)
+	err = member.Delete(ctx, r.Server, client, dbClient, firebaseID)
 	if err != nil {
 		err = errors.WithMessagef(err, "Failed to delete Firebase User(%s)", firebaseID)
 		log.Error(err)

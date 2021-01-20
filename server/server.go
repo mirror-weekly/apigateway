@@ -1,4 +1,5 @@
-package apigateway
+// Package server define the necessary component of a server
+package server
 
 import (
 	"context"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/token"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 )
@@ -48,22 +50,22 @@ func NewServer(c config.Conf) (*Server, error) {
 	}
 	app, err := firebase.NewApp(context.Background(), config, opt)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing app: %v", err)
+		return nil, errors.Wrap(err, "error initializing app")
 	}
 
 	firebaseClient, err := app.Auth(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("initialization of Firebase Auth Client encountered error: %s", err.Error())
+		return nil, errors.Wrap(err, "fail to initialize thr Firebase Auth Client")
 	}
 
 	dbClient, err := app.Database(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("initialization of Firebase Database Client encountered error: %s", err.Error())
+		return nil, errors.Wrap(err, "fail to initialize the Firebase Database Client")
 	}
 
 	gatewayToken, err := token.NewGatewayToken(c.TokenSecretName, c.ProjectID)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving of the latest token(%s) encountered error: %s", c.TokenSecretName, err.Error())
+		return nil, errors.Wrapf(err, "fail to retrieve the latest token(%s)", c.TokenSecretName)
 	}
 
 	s := &Server{
