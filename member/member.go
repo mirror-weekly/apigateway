@@ -37,7 +37,7 @@ type Clients struct {
 	graphqlClient *graphql.Client
 }
 
-// FIXME server should be be required
+// FIXME server should be not required
 func (c *Clients) getGraphQLClient(server *server.Server) (graphqlClient *graphql.Client, err error) {
 	c.Do(func() {
 		tokenString, err := server.UserSrvToken.GetTokenString()
