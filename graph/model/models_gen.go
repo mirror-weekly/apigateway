@@ -18,55 +18,37 @@ type ArchiveAccount struct {
 }
 
 type CreateMember struct {
-	Member  *MemberType `json:"member"`
-	Success *bool       `json:"success"`
-	Msg     *string     `json:"msg"`
+	Member  *Member `json:"member"`
+	Success *bool   `json:"success"`
+	Msg     *string `json:"msg"`
 }
 
 type DeleteMember struct {
 	Success *bool `json:"success"`
 }
 
-type MemberType struct {
-	ID          string           `json:"id"`
-	LastLogin   *string          `json:"lastLogin"`
-	Username    string           `json:"username"`
-	IsStaff     bool             `json:"isStaff"`
-	IsActive    bool             `json:"isActive"`
-	DateJoined  string           `json:"dateJoined"`
-	Email       *string          `json:"email"`
-	FirebaseID  *string          `json:"firebaseId"`
-	Nickname    *string          `json:"nickname"`
-	Name        *string          `json:"name"`
-	Gender      CustomUserGender `json:"gender"`
-	Phone       *string          `json:"phone"`
-	Birthday    *string          `json:"birthday"`
-	Country     *string          `json:"country"`
-	City        *string          `json:"city"`
-	District    *string          `json:"district"`
-	Address     *string          `json:"address"`
-	IsSuperuser bool             `json:"isSuperuser"`
-}
-
 type ObtainJSONWebToken struct {
-	Token        *string   `json:"token"`
-	Success      *bool     `json:"success"`
-	Errors       *string   `json:"errors"`
-	User         *UserNode `json:"user"`
-	Unarchiving  *bool     `json:"unarchiving"`
-	RefreshToken *string   `json:"refreshToken"`
+	Payload          string    `json:"payload"`
+	RefreshExpiresIn int       `json:"refreshExpiresIn"`
+	Success          *bool     `json:"success"`
+	Errors           *string   `json:"errors"`
+	User             *UserNode `json:"user"`
+	Unarchiving      *bool     `json:"unarchiving"`
+	Token            string    `json:"token"`
+	RefreshToken     string    `json:"refreshToken"`
 }
 
 type RefreshToken struct {
-	Token        *string `json:"token"`
-	Payload      *string `json:"payload"`
-	Success      *bool   `json:"success"`
-	Errors       *string `json:"errors"`
-	RefreshToken *string `json:"refreshToken"`
+	Payload          string  `json:"payload"`
+	RefreshExpiresIn int     `json:"refreshExpiresIn"`
+	Success          *bool   `json:"success"`
+	Errors           *string `json:"errors"`
+	Token            string  `json:"token"`
+	RefreshToken     string  `json:"refreshToken"`
 }
 
 type RevokeToken struct {
-	Revoked *int    `json:"revoked"`
+	Revoked int     `json:"revoked"`
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
 }
@@ -82,8 +64,8 @@ type SwapEmails struct {
 }
 
 type UpdateMember struct {
-	Member  *MemberType `json:"member"`
-	Success *bool       `json:"success"`
+	Member  *Member `json:"member"`
+	Success *bool   `json:"success"`
 }
 
 type UserNode struct {
@@ -126,9 +108,30 @@ type VerifySecondaryEmail struct {
 }
 
 type VerifyToken struct {
-	Payload *string `json:"payload"`
+	Payload string  `json:"payload"`
 	Success *bool   `json:"success"`
 	Errors  *string `json:"errors"`
+}
+
+type Member struct {
+	ID          string           `json:"id"`
+	LastLogin   *string          `json:"lastLogin"`
+	Username    string           `json:"username"`
+	IsStaff     bool             `json:"isStaff"`
+	IsActive    bool             `json:"isActive"`
+	DateJoined  string           `json:"dateJoined"`
+	Email       *string          `json:"email"`
+	FirebaseID  *string          `json:"firebaseId"`
+	Nickname    *string          `json:"nickname"`
+	Name        *string          `json:"name"`
+	Gender      CustomUserGender `json:"gender"`
+	Phone       *string          `json:"phone"`
+	Birthday    *string          `json:"birthday"`
+	Country     *string          `json:"country"`
+	City        *string          `json:"city"`
+	District    *string          `json:"district"`
+	Address     *string          `json:"address"`
+	IsSuperuser bool             `json:"isSuperuser"`
 }
 
 type CustomUserGender string

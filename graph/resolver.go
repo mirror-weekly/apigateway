@@ -2,13 +2,18 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/99designs/gqlgen/graphql"
+	graphql99 "github.com/99designs/gqlgen/graphql"
+	"github.com/machinebox/graphql"
+	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/middleware"
+	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
 
 	"firebase.google.com/go/v4/auth"
+	"firebase.google.com/go/v4/db"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +22,10 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
+	// Token      token.Token
+	Client     *graphql.Client
+	Conf       config.Conf
+	Server     *server.Server
 	UserSrvURL string
 }
 
@@ -59,7 +68,7 @@ func FirebaseClientFromContext(ctx context.Context) (*auth.Client, error) {
 	logger := log.WithFields(log.Fields{
 		"path": gCTX.FullPath(),
 	})
-	firebaseClientCtx := ctx.Value(middleware.CtxFirebaseClient)
+	firebaseClientCtx := ctx.Value(middleware.CtxFirebaseClientKey)
 
 	client, ok := firebaseClientCtx.(*auth.Client)
 	if !ok {
@@ -70,19 +79,39 @@ func FirebaseClientFromContext(ctx context.Context) (*auth.Client, error) {
 	return client, nil
 }
 
+func FirebaseDatabaseClientFromContext(ctx context.Context) (*db.Client, error) {
+	gCTX, err := GinContextFromContext(ctx)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	logger := log.WithFields(log.Fields{
+		"path": gCTX.FullPath(),
+	})
+	firebaseDatabaseClientCtx := ctx.Value(middleware.CtxFirebaseDatabaseClientKey)
+
+	client, ok := firebaseDatabaseClientCtx.(*db.Client)
+	if !ok {
+		err := errors.New("db.Client has wrong type")
+		logger.Error(err)
+		return nil, err
+	}
+	return client, nil
+}
+
 func GetPreloads(ctx context.Context) []string {
 	return GetNestedPreloads(
-		graphql.GetOperationContext(ctx),
-		graphql.CollectFieldsCtx(ctx, nil),
+		graphql99.GetOperationContext(ctx),
+		graphql99.CollectFieldsCtx(ctx, nil),
 		"",
 	)
 }
 
-func GetNestedPreloads(ctx *graphql.OperationContext, fields []graphql.CollectedField, prefix string) (preloads []string) {
+func GetNestedPreloads(ctx *graphql99.OperationContext, fields []graphql99.CollectedField, prefix string) (preloads []string) {
 	for _, column := range fields {
 		prefixColumn := GetPreloadString(prefix, column.Name)
 		preloads = append(preloads, prefixColumn)
-		preloads = append(preloads, GetNestedPreloads(ctx, graphql.CollectFields(ctx, column.Selections, nil), prefixColumn)...)
+		preloads = append(preloads, GetNestedPreloads(ctx, graphql99.CollectFields(ctx, column.Selections, nil), prefixColumn)...)
 	}
 	return
 }

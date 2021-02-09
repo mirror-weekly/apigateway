@@ -1,4 +1,4 @@
-// package apigateway is the package containing the domain knowledge.
+// Package apigateway is the package containing the domain knowledge.
 package apigateway
 
 type User interface {
