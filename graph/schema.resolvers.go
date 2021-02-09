@@ -52,7 +52,7 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email *string, fire
 
 	req := graphql.NewRequest(gql)
 	req.Var("firebaseId", firebaseID)
-	req.Var("email", *email)
+	req.Var("email", email)
 
 	// Ask User service to create the member
 	var resp struct {
