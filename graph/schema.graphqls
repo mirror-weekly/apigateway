@@ -9,7 +9,7 @@ type ArchiveAccount {
 }
 
 type CreateMember {
-  member: MemberType
+  member: member
   success: Boolean
   msg: String
 }
@@ -33,30 +33,12 @@ scalar ExpectedErrorType
 
 scalar GenericScalar
 
-type MemberType {
-  id: ID!
-  lastLogin: DateTime
-  username: String!
-  isStaff: Boolean!
-  isActive: Boolean!
-  dateJoined: DateTime!
-  email: String
-  firebaseId: String
-  nickname: String
-  name: String
-  gender: CustomUserGender!
-  phone: String
-  birthday: Date
-  country: String
-  city: String
-  district: String
-  address: String
-  isSuperuser: Boolean!
-}
-
 type Mutation {
-  member: MemberType
-  createMember(email: String!, firebaseId: String!, nickname: String): CreateMember
+  tokenCreate(password: String!, email: String, username: String): ObtainJSONWebToken
+  tokenRefresh(refreshToken: String!): RefreshToken
+  tokenVerify(token: String!): VerifyToken
+  member: member
+  createMember(email: String, firebaseId: String!): CreateMember
   updateMember(address: String, birthday: Date, city: String, country: String, district: String, firebaseId: String!, gender: Int, name: String, nickname: String, phone: String, profileImage: String): UpdateMember
   deleteMember(firebaseId: String!): DeleteMember
   verifyMember(token: String!): VerifyAccount
@@ -75,28 +57,31 @@ interface Node {
 }
 
 type ObtainJSONWebToken {
-  token: String
+  payload: GenericScalar!
+  refreshExpiresIn: Int!
   success: Boolean
   errors: ExpectedErrorType
   user: UserNode
   unarchiving: Boolean
-  refreshToken: String
+  token: String!
+  refreshToken: String!
 }
 
 type Query {
-  member(firebaseId: String!): MemberType
+  member(firebaseId: String!): member
 }
 
 type RefreshToken {
-  token: String
-  payload: GenericScalar
+  payload: GenericScalar!
+  refreshExpiresIn: Int!
   success: Boolean
   errors: ExpectedErrorType
-  refreshToken: String
+  token: String!
+  refreshToken: String!
 }
 
 type RevokeToken {
-  revoked: Int
+  revoked: Int!
   success: Boolean
   errors: ExpectedErrorType
 }
@@ -112,7 +97,7 @@ type SwapEmails {
 }
 
 type UpdateMember {
-  member: MemberType
+  member: member
   success: Boolean
 }
 
@@ -154,7 +139,28 @@ type VerifySecondaryEmail {
 }
 
 type VerifyToken {
-  payload: GenericScalar
+  payload: GenericScalar!
   success: Boolean
   errors: ExpectedErrorType
+}
+
+type member {
+  id: ID!
+  lastLogin: DateTime
+  username: String!
+  isStaff: Boolean!
+  isActive: Boolean!
+  dateJoined: DateTime!
+  email: String
+  firebaseId: String
+  nickname: String
+  name: String
+  gender: CustomUserGender!
+  phone: String
+  birthday: Date
+  country: String
+  city: String
+  district: String
+  address: String
+  isSuperuser: Boolean!
 }
