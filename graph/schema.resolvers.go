@@ -16,18 +16,30 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *mutationResolver) Member(ctx context.Context) (*model.MemberType, error) {
+func (r *mutationResolver) TokenCreate(ctx context.Context, password string, email *string, username *string) (*model.ObtainJSONWebToken, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) CreateMember(ctx context.Context, email string, firebaseID string, nickname *string) (*model.CreateMember, error) {
+func (r *mutationResolver) TokenRefresh(ctx context.Context, refreshToken string) (*model.RefreshToken, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) TokenVerify(ctx context.Context, token string) (*model.VerifyToken, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) Member(ctx context.Context) (*model.Member, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) CreateMember(ctx context.Context, email *string, firebaseID string) (*model.CreateMember, error) {
 	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
 
 	// Construct GraphQL mutation
 	preloads := GetPreloads(ctx)
-	preGQL := []string{"mutation($email: String!, $firebaseId: String!, $nickname: String) {", "createMember(email: $email, firebaseId: $firebaseId, nickname: $nickname) {"}
+	preGQL := []string{"mutation($email: String, $firebaseId: String!) {", "createMember(email: $email, firebaseId: $firebaseId) {"}
 
 	fieldsOnly := Map(preloads, func(s string) string {
 		ns := strings.Split(s, ".")
@@ -40,8 +52,7 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email string, fireb
 
 	req := graphql.NewRequest(gql)
 	req.Var("firebaseId", firebaseID)
-	req.Var("email", email)
-	req.Var("nickname", nickname)
+	req.Var("email", *email)
 
 	// Ask User service to create the member
 	var resp struct {
@@ -161,7 +172,7 @@ func (r *mutationResolver) RevokeToken(ctx context.Context, refreshToken string)
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.MemberType, error) {
+func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.Member, error) {
 	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
