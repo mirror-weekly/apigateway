@@ -195,7 +195,7 @@ func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.M
 	req := graphql.NewRequest(gql)
 	req.Var("firebaseId", firebaseID)
 	var member struct {
-		Member *model.MemberType `json:"member"`
+		Member *model.Member `json:"member"`
 	}
 	err := r.Client.Run(ctx, req, &member)
 
