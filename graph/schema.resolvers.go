@@ -123,6 +123,7 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 		return nil, err
 	}
 
+	// use context.Background() so that the "delete member" can finish without interuption
 	err = member.Delete(context.Background(), r.Server, client, dbClient, firebaseID)
 	if err != nil {
 		err = errors.WithMessagef(err, "Failed to delete Firebase User(%s)", firebaseID)
