@@ -86,14 +86,16 @@ func Delete(parent context.Context, server *server.Server, client *auth.Client, 
 
 func revokeFirebaseToken(parent context.Context, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
 
-	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	defer cancel()
+	ctx, cancelRevoke := context.WithTimeout(parent, 10*time.Second)
+	defer cancelRevoke()
 	if err := client.RevokeRefreshTokens(ctx, firebaseID); err != nil {
 		log.Errorf("error revoking tokens for user: %v, %v", firebaseID, err)
 		return err
 	}
 	log.Infof("revoked tokens for user: %v", firebaseID)
 	// accessing the user's TokenValidAfter
+	ctx, cancelGetUser := context.WithTimeout(parent, 10*time.Second)
+	defer cancelGetUser()
 	u, err := client.GetUser(ctx, firebaseID)
 	if err != nil {
 		log.Errorf("error getting user %s: %v", firebaseID, err)
@@ -102,6 +104,8 @@ func revokeFirebaseToken(parent context.Context, client *auth.Client, dbClient *
 	timestamp := u.TokensValidAfterMillis / 1000
 	log.Printf("the refresh tokens were revoked at: %d (UTC seconds) ", timestamp)
 	// save revoked time metadata for the user
+	ctx, cancelSetMetadataRevokeTime := context.WithTimeout(parent, 10*time.Second)
+	defer cancelSetMetadataRevokeTime()
 	if err := dbClient.NewRef("metadata/"+u.UID).Set(ctx, map[string]int64{"revokeTime": timestamp}); err != nil {
 		log.Error(err)
 		return err
@@ -112,8 +116,8 @@ func revokeFirebaseToken(parent context.Context, client *auth.Client, dbClient *
 
 func deleteFirebaseUser(parent context.Context, client *auth.Client, firebaseID string) error {
 
-	ctx, cancel := context.WithCancel(parent)
-	defer cancel()
+	ctx, cancelDelete := context.WithCancel(parent)
+	defer cancelDelete()
 	err := client.DeleteUser(ctx, firebaseID)
 	if err != nil {
 		err = errors.WithMessagef(err, "member(%s) deletion failed", firebaseID)
@@ -124,14 +128,16 @@ func deleteFirebaseUser(parent context.Context, client *auth.Client, firebaseID 
 
 func publishDeleteMemberMessage(parent context.Context, projectID string, topic string, firebaseID string) error {
 
-	ctx, cancel := context.WithCancel(parent)
+	clientCTX, cancel := context.WithCancel(parent)
 	defer cancel()
-	client, err := pubsub.NewClient(ctx, projectID)
+	client, err := pubsub.NewClient(clientCTX, projectID)
 	if err != nil {
 		err = errors.WithMessage(err, "error creating client for pubsub")
 		return err
 	}
 
+	ctx, cancelPublish := context.WithCancel(clientCTX)
+	defer cancelPublish()
 	t := client.Topic(topic)
 	result := t.Publish(ctx, &pubsub.Message{
 		Attributes: map[string]string{
@@ -141,6 +147,8 @@ func publishDeleteMemberMessage(parent context.Context, projectID string, topic 
 	})
 	// Block until the result is returned and a server-generated
 	// ID is returned for the published message.
+	ctx, cancelGet := context.WithCancel(clientCTX)
+	defer cancelGet()
 	id, err := result.Get(ctx)
 	if err != nil {
 		errors.WithMessage(err, "get published message result has error")
@@ -151,7 +159,9 @@ func publishDeleteMemberMessage(parent context.Context, projectID string, topic 
 }
 
 func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken token.Token) error {
-	client, err := pubsub.NewClient(parent, c.ProjectID)
+	clientCTX, cancel := context.WithCancel(parent)
+	defer cancel()
+	client, err := pubsub.NewClient(clientCTX, c.ProjectID)
 	if err != nil {
 		return fmt.Errorf("pubsub.NewClient: %v", err)
 	}
@@ -194,8 +204,8 @@ func SubscribeDeleteMember(parent context.Context, c config.Conf, userSrvToken t
 	}()
 
 	// Receive messages for 10 seconds.
-	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	defer cancel()
+	ctx, cancelReceive := context.WithTimeout(clientCTX, 10*time.Second)
+	defer cancelReceive()
 	// Receive blocks until the context is cancelled or an error occurs.
 	log.Infof("Pulling subscription: %s", c.PubSubSubscribeMember)
 	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
