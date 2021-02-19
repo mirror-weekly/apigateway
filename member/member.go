@@ -63,6 +63,20 @@ func (c *Clients) getGraphQLClient(server *server.Server) (graphqlClient *graphq
 // singleton clients
 var clients Clients
 
+// DisableFirebaseUser disables the user in Firebase
+func DisableFirebaseUser(parent context.Context, client *auth.Client, firebaseID string) (err error) {
+
+	ctx, cancelDisable := context.WithCancel(parent)
+	defer cancelDisable()
+	params := (&auth.UserToUpdate{}).Disabled(true)
+	_, err = client.UpdateUser(ctx, firebaseID, params)
+	if err != nil {
+		err = errors.WithMessagef(err, "fail to disable member(%s)", firebaseID)
+		return err
+	}
+	return nil
+}
+
 // Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
 func Delete(parent context.Context, server *server.Server, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
 	var graphqlClient *graphql.Client
