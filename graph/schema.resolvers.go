@@ -108,10 +108,16 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	if _, err := r.IsRequestMatchingRequesterFirebaseID(ctx, firebaseID); err != nil {
 		return nil, err
 	}
-	// delete Firebase user
 	client, err := FirebaseClientFromContext(ctx)
 	if err != nil {
 		errors.WithMessage(err, "can't get FirebaseClient from context")
+		log.Error(err)
+		return nil, err
+	}
+
+	// disable firebase user before delete member to decrease response time
+	if err = member.DisableFirebaseUser(ctx, client, firebaseID); err != nil {
+		errors.WithMessage(err, fmt.Sprintf("can't disable Firebaseuser(%s)", firebaseID))
 		log.Error(err)
 		return nil, err
 	}
@@ -123,13 +129,16 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 		return nil, err
 	}
 
+	// delete Firebase user and request to disable member in DB concurrently
 	// use context.Background() so that the "delete member" can finish without interuption
-	err = member.Delete(context.Background(), r.Server, client, dbClient, firebaseID)
-	if err != nil {
-		err = errors.WithMessagef(err, "Failed to delete Firebase User(%s)", firebaseID)
-		log.Error(err)
-		return nil, err
-	}
+	go func() {
+		err = member.Delete(context.Background(), r.Server, client, dbClient, firebaseID)
+		if err != nil {
+			err = errors.WithMessagef(err, "Failed to delete Firebase User(%s)", firebaseID)
+			log.Error(err)
+		}
+	}()
+
 	Success := true
 	log.Infof("Successfully deleted Firebase user(%s)", firebaseID)
 	return &model.DeleteMember{
