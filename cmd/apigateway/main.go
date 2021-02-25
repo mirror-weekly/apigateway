@@ -13,7 +13,6 @@ import (
 
 	apigateway "github.com/mirror-media/mm-apigateway"
 	"github.com/mirror-media/mm-apigateway/config"
-	"github.com/mirror-media/mm-apigateway/member"
 	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -61,14 +60,6 @@ func main() {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 
-	subCTX, subCancel := context.WithCancel(context.Background())
-	go func() {
-		// SubscribeDeleteMember block until subCTX is canceled or an error occurs
-		if err = member.SubscribeDeleteMember(subCTX, cfg, server.UserSrvToken); err != nil {
-			err = errors.Wrap(shutdown(srv, subCancel), err.Error())
-			log.Fatalf("error server closed: %s\n", err)
-		}
-	}()
 	go func() {
 		log.Infof("server listening to %s", srv.Addr)
 		if err = srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -89,7 +80,7 @@ func main() {
 	<-quit
 	log.Println("Shutting down server...")
 
-	if err := shutdown(srv, subCancel); err != nil {
+	if err := shutdown(srv, nil); err != nil {
 		log.Fatalf("Server forced to shutdown:", err)
 	}
 	os.Exit(0)

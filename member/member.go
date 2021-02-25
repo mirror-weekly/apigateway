@@ -79,23 +79,20 @@ func DisableFirebaseUser(parent context.Context, client *auth.Client, firebaseID
 
 // Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
 func Delete(parent context.Context, server *server.Server, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
-	var graphqlClient *graphql.Client
+
 	if err = revokeFirebaseToken(parent, client, dbClient, firebaseID); err != nil {
 		return err
 	} else if err = deleteFirebaseUser(parent, client, firebaseID); err != nil {
 		return err
-	} else if graphqlClient, err = clients.getGraphQLClient(server); err != nil {
-		return err
-	} else if err = requestToDeleteMember(server.UserSrvToken, graphqlClient, firebaseID); err != nil {
-		// Use an independent context here because I want the publication of message to finish regardless of shutdowning down
-		c := server.Conf
-		go func() {
-			if err := publishDeleteMemberMessage(context.Background(), c.ProjectID, c.PubSubTopicMember, firebaseID); err != nil {
-				log.Error(err)
-			}
-		}()
 	}
-	return err
+
+	c := server.Conf
+
+	if err = publishDeleteMemberMessage(parent, c.ProjectID, c.PubSubTopicMember, firebaseID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func revokeFirebaseToken(parent context.Context, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
