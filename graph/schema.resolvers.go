@@ -16,6 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var logger = log.New().WithField("type", "graphQL")
+
 func (r *mutationResolver) TokenCreate(ctx context.Context, password string, email *string, username *string) (*model.ObtainJSONWebToken, error) {
 	panic(fmt.Errorf("not implemented"))
 }
@@ -60,6 +62,8 @@ func (r *mutationResolver) CreateMember(ctx context.Context, email *string, fire
 	}
 	err := r.Client.Run(ctx, req, &resp)
 
+	checkAndPrintGraphQLError(logger.WithField("mutation", "CreateMember"), err)
+
 	return resp.CreateMember, err
 }
 
@@ -100,6 +104,8 @@ func (r *mutationResolver) UpdateMember(ctx context.Context, address *string, bi
 		UpdateMember *model.UpdateMember `json:"updateMember"`
 	}
 	err := r.Client.Run(ctx, req, &resp)
+
+	checkAndPrintGraphQLError(logger.WithField("mutation", "UpdateMember"), err)
 
 	return resp.UpdateMember, err
 }
@@ -208,6 +214,8 @@ func (r *queryResolver) Member(ctx context.Context, firebaseID string) (*model.M
 		Member *model.Member `json:"member"`
 	}
 	err := r.Client.Run(ctx, req, &member)
+
+	checkAndPrintGraphQLError(logger.WithField("query", "Member"), err)
 
 	return member.Member, err
 }
