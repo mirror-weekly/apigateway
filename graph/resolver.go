@@ -130,3 +130,9 @@ func Map(vs []string, f func(string) string) []string {
 	}
 	return vsm
 }
+
+func checkAndPrintGraphQLError(logger *log.Entry, err error) {
+	if err != nil {
+		logger.Infof("GraphQL request received error from:%v", err)
+	}
+}
