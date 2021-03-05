@@ -1,4 +1,4 @@
-package apigateway
+package server
 
 import (
 	"bytes"
@@ -15,7 +15,6 @@ import (
 
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
-	"github.com/mirror-media/mm-apigateway/server"
 	"github.com/mirror-media/mm-apigateway/token"
 	"golang.org/x/oauth2"
 
@@ -29,7 +28,7 @@ import (
 )
 
 // GetIDTokenOnly is a middleware to construct the token.Token interface
-func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
+func GetIDTokenOnly(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -49,7 +48,7 @@ func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 }
 
 // AuthenticateIDToken is a middleware to authenticate the request and save the result to the context
-func AuthenticateIDToken(server *server.Server) gin.HandlerFunc {
+func AuthenticateIDToken(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -92,7 +91,7 @@ func AuthenticateIDToken(server *server.Server) gin.HandlerFunc {
 	}
 }
 
-func GinContextToContextMiddleware(server *server.Server) gin.HandlerFunc {
+func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxGinContexKey, c)
 		c.Request = c.Request.WithContext(ctx)
@@ -100,7 +99,7 @@ func GinContextToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	}
 }
 
-func FirebaseClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
+func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseClientKey, server.FirebaseClient)
 		c.Request = c.Request.WithContext(ctx)
@@ -108,7 +107,7 @@ func FirebaseClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	}
 }
 
-func FirebaseDBClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
+func FirebaseDBClientToContextMiddleware(server *Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseDatabaseClientKey, server.FirebaseDatabaseClient)
 		c.Request = c.Request.WithContext(ctx)
@@ -230,7 +229,7 @@ type ErrorReply struct {
 	Data   interface{} `json:"data,omitempty"`
 }
 
-func SetHealthRoute(server *server.Server) error {
+func SetHealthRoute(server *Server) error {
 
 	if server.Conf == nil || server.FirebaseApp == nil {
 		return errors.New("config or firebase app is nil")
@@ -245,7 +244,7 @@ func SetHealthRoute(server *server.Server) error {
 }
 
 // SetRoute sets the routing for the gin engine
-func SetRoute(server *server.Server) error {
+func SetRoute(server *Server) error {
 	apiRouter := server.Engine.Group("/api")
 
 	// Public API
@@ -271,7 +270,6 @@ func SetRoute(server *server.Server) error {
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server), FirebaseDBClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 		Conf:       *server.Conf,
-		Server:     server,
 		UserSrvURL: server.Conf.ServiceEndpoints.UserGraphQL,
 		// Token:      server.UserSrvToken,
 		// TODO Temp workaround
