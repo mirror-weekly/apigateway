@@ -173,6 +173,7 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		})
 
 		if err != nil {
+			log.Errorf("Marshalling reply encountered error: %v", err)
 			return err
 		}
 
