@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -16,6 +17,7 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
 	"github.com/mirror-media/mm-apigateway/token"
+	"github.com/tidwall/sjson"
 	"golang.org/x/oauth2"
 
 	log "github.com/sirupsen/logrus"
@@ -165,6 +167,49 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 			tokenState = "No Bearer token available"
 		} else {
 			tokenState = tokenSaved.(token.Token).GetTokenState()
+		}
+
+		switch path := r.Request.URL.Path; {
+		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
+			// truncate the content if the user is not a member and the post falls into a member only category
+			if tokenState != token.OK {
+
+				type Category struct {
+					IsMemberOnly *bool `json:"isMemberOnly,omitempty"`
+				}
+
+				type ItemContent struct {
+					APIData []interface{} `json:"apiData"`
+				}
+				type Item struct {
+					Content    ItemContent `json:"content"`
+					Categories []Category  `json:"categories"`
+				}
+				type Resp struct {
+					Items []Item `json:"_items"`
+				}
+
+				var items Resp
+				err = json.Unmarshal(body, &items)
+				if err != nil {
+					log.Errorf("Unmarshal post encountered error: %v", err)
+					return err
+				}
+
+				// modify body if the item falls into a "member only" category
+				for i, item := range items.Items {
+					for _, category := range item.Categories {
+						if category.IsMemberOnly != nil && *category.IsMemberOnly {
+							truncatedAPIData := item.Content.APIData[0:3]
+							body, err = sjson.SetBytes(body, fmt.Sprintf("_items.%d.content.apiData", i), truncatedAPIData)
+							if err != nil {
+								return err
+							}
+							break
+						}
+					}
+				}
+			}
 		}
 
 		b, err := json.Marshal(Reply{
