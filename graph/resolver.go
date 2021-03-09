@@ -9,7 +9,6 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/middleware"
-	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
 
 	"firebase.google.com/go/v4/auth"
@@ -25,7 +24,6 @@ type Resolver struct {
 	// Token      token.Token
 	Client     *graphql.Client
 	Conf       config.Conf
-	Server     *server.Server
 	UserSrvURL string
 }
 
