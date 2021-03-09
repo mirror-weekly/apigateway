@@ -10,7 +10,6 @@ import (
 
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/graph/model"
-	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -32,27 +31,20 @@ const (
 
 type Clients struct {
 	sync.Once
-	conf          *config.Conf
-	server        *server.Server
+	conf          config.Conf
 	graphqlClient *graphql.Client
 }
 
-// FIXME server should be not required
-func (c *Clients) getGraphQLClient(server *server.Server) (graphqlClient *graphql.Client, err error) {
+func (c *Clients) getGraphQLClient(userSrvToken string, serverConf config.Conf) (graphqlClient *graphql.Client, err error) {
 	c.Do(func() {
-		tokenString, err := server.UserSrvToken.GetTokenString()
-		if err != nil {
-			log.Error(err)
-			return
-		}
 		src := oauth2.StaticTokenSource(
 			&oauth2.Token{
-				AccessToken: tokenString,
+				AccessToken: userSrvToken,
 				TokenType:   token.TypeJWT,
 			},
 		)
 		httpClient := oauth2.NewClient(context.Background(), src)
-		c.graphqlClient = graphql.NewClient(server.Conf.ServiceEndpoints.UserGraphQL, graphql.WithHTTPClient(httpClient))
+		c.graphqlClient = graphql.NewClient(serverConf.ServiceEndpoints.UserGraphQL, graphql.WithHTTPClient(httpClient))
 	})
 	if c.graphqlClient == nil {
 		return nil, errors.New("graphqlClient is nil")
@@ -78,7 +70,7 @@ func DisableFirebaseUser(parent context.Context, client *auth.Client, firebaseID
 }
 
 // Delete performs a series of actions to revoke token, remove firebase user and request to disable the member in the DB
-func Delete(parent context.Context, server *server.Server, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
+func Delete(parent context.Context, serverConf config.Conf, client *auth.Client, dbClient *db.Client, firebaseID string) (err error) {
 
 	if err = revokeFirebaseToken(parent, client, dbClient, firebaseID); err != nil {
 		return err
@@ -86,9 +78,7 @@ func Delete(parent context.Context, server *server.Server, client *auth.Client, 
 		return err
 	}
 
-	c := server.Conf
-
-	if err = publishDeleteMemberMessage(parent, c.ProjectID, c.PubSubTopicMember, firebaseID); err != nil {
+	if err = publishDeleteMemberMessage(parent, serverConf.ProjectID, serverConf.PubSubTopicMember, firebaseID); err != nil {
 		return err
 	}
 
