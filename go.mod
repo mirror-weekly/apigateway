@@ -9,6 +9,8 @@ require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/gin-gonic/gin v1.6.3
+	github.com/go-redis/cache/v8 v8.3.1
+	github.com/go-redis/redis/v8 v8.7.1
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -20,5 +22,4 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20210113195801-ae06605f4595
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
