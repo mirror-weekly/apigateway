@@ -13,8 +13,7 @@ FROM alpine:latest
 WORKDIR /api-gateway
 
 COPY --from=build /api-gateway/bin/ .
-COPY firebaseCredential.json .
-COPY config.yaml .
+COPY configs ./configs
 
 EXPOSE 8080
 CMD ["./apigateway"]
