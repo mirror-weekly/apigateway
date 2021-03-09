@@ -83,7 +83,7 @@ func NewServer(c config.Conf) (*Server, error) {
 			return nil, errors.New("there's no redis address provided")
 		}
 		// TODO refactor
-		addrs := make([]string, len(c.RedisService.Addresses))
+		addrs := make([]string, 0, len(c.RedisService.Addresses))
 		for _, a := range c.RedisService.Addresses {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
@@ -100,7 +100,7 @@ func NewServer(c config.Conf) (*Server, error) {
 
 		// TODO refactor
 		// Only the first address is used because it's a single instance
-		addrs := make([]string, len(c.RedisService.Addresses))
+		addrs := make([]string, 0, len(c.RedisService.Addresses))
 		for _, a := range c.RedisService.Addresses {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
@@ -113,7 +113,7 @@ func NewServer(c config.Conf) (*Server, error) {
 			return nil, errors.New("there's no redis address provided")
 		}
 		// TODO refactor
-		addrs := make([]string, len(c.RedisService.Addresses))
+		addrs := make([]string, 0, len(c.RedisService.Addresses))
 		for _, a := range c.RedisService.Addresses {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
