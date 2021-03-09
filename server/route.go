@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/cache/v8"
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
 	"github.com/mirror-media/mm-apigateway/token"
@@ -152,7 +153,7 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 
 }
 
-func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
+func ModifyReverseProxyResponse(c *gin.Context, redisCache *cache.Cache, cacheTTL int) func(*http.Response) error {
 	return func(r *http.Response) error {
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
@@ -170,8 +171,10 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		}
 
 		switch path := r.Request.URL.Path; {
+		// TODO refactor condition
 		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
 			// truncate the content if the user is not a member and the post falls into a member only category
+			var redisKey string
 			if tokenState != token.OK {
 
 				type Category struct {
@@ -209,7 +212,24 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 						}
 					}
 				}
+
+				// TODO refactor redis code
+				redisKey = fmt.Sprintf("%s.%s.%s", "yt-relay", "notmember", c.Request.RequestURI)
+			} else {
+
+				redisKey = fmt.Sprintf("%s.%s.%s", "yt-relay", "member", c.Request.RequestURI)
 			}
+			// TODO refactor redis code
+			err = redisCache.Set(&cache.Item{
+				Ctx:   context.TODO(),
+				Key:   redisKey,
+				Value: body,
+				TTL:   time.Duration(cacheTTL) * time.Second,
+			})
+			if err != nil {
+				log.Warnf("setting redis cache(%s) encountered error: %v", redisKey, err)
+			}
+		default:
 		}
 
 		b, err := json.Marshal(Reply{
@@ -229,7 +249,7 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 	}
 }
 
-func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string) func(c *gin.Context) {
+func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string, redisCache *cache.Cache, cacheTTL int) func(c *gin.Context) {
 	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
 		if strings.HasSuffix(pathBaseToStrip, "/") {
@@ -257,7 +277,49 @@ func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string) func(c *
 	reverseProxy := &httputil.ReverseProxy{Director: director}
 
 	return func(c *gin.Context) {
-		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c)
+		// TODO refactor modification and cache code
+		var tokenState string
+
+		tokenSaved, exist := c.Get(middleware.GCtxTokenKey)
+		if !exist {
+			tokenState = "No Bearer token available"
+		} else {
+			tokenState = tokenSaved.(token.Token).GetTokenState()
+		}
+
+		switch path := c.Request.URL.Path; {
+		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
+			// truncate the content if the user is not a member and the post falls into a member only category
+			var key string
+			if tokenState != token.OK {
+				// 1. read redis key
+				key = fmt.Sprintf("%s.%s.%s", "yt-relay", "notemember", c.Request.RequestURI)
+
+				// 2.1 if key exist, response directly
+			} else {
+				// 1. read redis key
+				key = fmt.Sprintf("%s.%s.%s", "yt-relay", "member", c.Request.RequestURI)
+			}
+
+			var body []byte
+
+			item := &cache.Item{
+				Ctx:   context.TODO(),
+				Key:   key,
+				Value: &body,
+			}
+			err := redisCache.Once(item)
+			// cache exists, do not fetch reverse proxy
+			if err == nil {
+				c.AbortWithStatusJSON(http.StatusOK, Reply{
+					TokenState: tokenState,
+					Data:       json.RawMessage(body),
+				})
+				return
+			}
+		}
+		// 2.2 if key doesn't exist, do reverse proxy
+		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c, redisCache, cacheTTL)
 		reverseProxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
@@ -344,7 +406,7 @@ func SetRoute(server *Server) error {
 		return err
 	}
 
-	v0tokenStateRouter.Any("/*wildcard", NewSingleHostReverseProxy(proxyURL, v0Router.BasePath()))
+	v0tokenStateRouter.Any("/*wildcard", NewSingleHostReverseProxy(proxyURL, v0Router.BasePath(), server.RedisCache, server.Conf.RedisService.Cache.TTL))
 
 	return nil
 }

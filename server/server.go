@@ -83,8 +83,9 @@ func NewServer(c config.Conf) (*Server, error) {
 			Password: c.RedisService.Password,
 		})
 		redisCache = cache.New(&cache.Options{
-			Redis:      rdb,
-			LocalCache: cache.NewTinyLFU(30, time.Second),
+			Redis: rdb,
+			// Using cache.Once to optimize getting value, local cache shouldn't be needed
+			// LocalCache: cache.NewTinyLFU(30, time.Second),
 		})
 	case "single":
 		if len(c.RedisService.Addresses) == 0 {
