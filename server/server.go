@@ -10,7 +10,6 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"firebase.google.com/go/v4/db"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/cache/v8"
 	"github.com/go-redis/redis/v8"
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/token"
@@ -31,7 +30,7 @@ type Server struct {
 	FirebaseDatabaseClient *db.Client
 	Services               *ServiceEndpoints
 	UserSrvToken           token.Token
-	RedisCache             *cache.Cache
+	Rdb                    Rediser
 }
 
 func init() {
@@ -41,6 +40,15 @@ func init() {
 
 func (s *Server) Run() error {
 	return s.Engine.Run(fmt.Sprintf("%s:%d", s.Conf.Address, s.Conf.Port))
+}
+
+type Rediser interface {
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.StatusCmd
+	SetXX(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.BoolCmd
+	SetNX(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.BoolCmd
+
+	Get(ctx context.Context, key string) *redis.StringCmd
+	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
 func NewServer(c config.Conf) (*Server, error) {
@@ -67,7 +75,8 @@ func NewServer(c config.Conf) (*Server, error) {
 		return nil, errors.Wrap(err, "fail to initialize the Firebase Database Client")
 	}
 
-	var redisCache *cache.Cache
+	var rdb Rediser
+
 	switch c.RedisService.Type {
 	case "cluster":
 		if len(c.RedisService.Addresses) == 0 {
@@ -78,14 +87,9 @@ func NewServer(c config.Conf) (*Server, error) {
 		for _, a := range c.RedisService.Addresses {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
-		rdb := redis.NewClusterClient(&redis.ClusterOptions{
+		rdb = redis.NewClusterClient(&redis.ClusterOptions{
 			Addrs:    addrs,
 			Password: c.RedisService.Password,
-		})
-		redisCache = cache.New(&cache.Options{
-			Redis: rdb,
-			// Using cache.Once to optimize getting value, local cache shouldn't be needed
-			// LocalCache: cache.NewTinyLFU(30, time.Second),
 		})
 	case "single":
 		if len(c.RedisService.Addresses) == 0 {
@@ -100,13 +104,9 @@ func NewServer(c config.Conf) (*Server, error) {
 		for _, a := range c.RedisService.Addresses {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
-		rdb := redis.NewClient(&redis.Options{
+		rdb = redis.NewClient(&redis.Options{
 			Addr:     addrs[0],
 			Password: c.RedisService.Password,
-		})
-		redisCache = cache.New(&cache.Options{
-			Redis:      rdb,
-			LocalCache: cache.NewTinyLFU(30, time.Second),
 		})
 	case "sentinel":
 		if len(c.RedisService.Addresses) == 0 {
@@ -117,13 +117,9 @@ func NewServer(c config.Conf) (*Server, error) {
 		for _, a := range c.RedisService.Addresses {
 			addrs = append(addrs, fmt.Sprintf("%s:%d", a.Addr, a.Port))
 		}
-		rdb := redis.NewFailoverClient(&redis.FailoverOptions{
+		rdb = redis.NewFailoverClient(&redis.FailoverOptions{
 			SentinelAddrs: addrs,
 			Password:      c.RedisService.Password,
-		})
-		redisCache = cache.New(&cache.Options{
-			Redis:      rdb,
-			LocalCache: cache.NewTinyLFU(30, time.Second),
 		})
 	default:
 		return nil, errors.New(fmt.Sprintf("unsupported redis type(%s)", c.RedisService.Type))
@@ -140,7 +136,7 @@ func NewServer(c config.Conf) (*Server, error) {
 		FirebaseApp:            app,
 		FirebaseClient:         firebaseClient,
 		FirebaseDatabaseClient: dbClient,
-		RedisCache:             redisCache,
+		Rdb:                    rdb,
 		Services: &ServiceEndpoints{
 			UserGraphQL: c.ServiceEndpoints.UserGraphQL,
 		},
