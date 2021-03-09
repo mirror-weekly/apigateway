@@ -23,7 +23,7 @@ func main() {
 	// name of config file (without extension)
 	viper.SetConfigName("config")
 	// optionally look for config in the working directory
-	viper.AddConfigPath(".")
+	viper.AddConfigPath("./configs")
 	// Find and read the config file
 	err := viper.ReadInConfig()
 	// Handle errors reading the config file
