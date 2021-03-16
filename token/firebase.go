@@ -74,16 +74,21 @@ func NewFirebaseToken(authHeader *string, client *auth.Client) (Token, error) {
 	}
 	const BearerSchema = "Bearer "
 	var state, tokenString *string
+	log.Debugf("NewFirebaseToken...(authHeader:%s)", *authHeader)
 	if authHeader == nil || *authHeader == "" {
 		s := "authorization header is not provided"
 		state = &s
+		log.Debugf("state is:%s)", state)
 	} else if !strings.HasPrefix(*authHeader, BearerSchema) {
 		s := "Not a Bearer token"
 		state = &s
+		log.Debugf("state is:%s)", state)
 	} else {
 		s := (*authHeader)[len(BearerSchema):]
+		log.Debugf("trimming header :%s)", s)
 		tokenString = &s
 	}
+	log.Debugf("final tokenString...(tokenString:%s)", tokenString)
 	firebaseToken := &FirebaseToken{
 		firebaseClient: client,
 		tokenString:    tokenString,
