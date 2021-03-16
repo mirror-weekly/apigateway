@@ -1,1 +1,1 @@
-build/ci/.drone.yml
+./build/ci/mm/dev/.drone.yml

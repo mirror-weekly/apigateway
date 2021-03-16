@@ -1,11 +1,10 @@
-package server
+package apigateway
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -16,8 +15,8 @@ import (
 
 	"github.com/machinebox/graphql"
 	"github.com/mirror-media/mm-apigateway/middleware"
+	"github.com/mirror-media/mm-apigateway/server"
 	"github.com/mirror-media/mm-apigateway/token"
-	"github.com/tidwall/sjson"
 	"golang.org/x/oauth2"
 
 	log "github.com/sirupsen/logrus"
@@ -30,7 +29,7 @@ import (
 )
 
 // GetIDTokenOnly is a middleware to construct the token.Token interface
-func GetIDTokenOnly(server *Server) gin.HandlerFunc {
+func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -50,7 +49,7 @@ func GetIDTokenOnly(server *Server) gin.HandlerFunc {
 }
 
 // AuthenticateIDToken is a middleware to authenticate the request and save the result to the context
-func AuthenticateIDToken(server *Server) gin.HandlerFunc {
+func AuthenticateIDToken(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
@@ -93,7 +92,7 @@ func AuthenticateIDToken(server *Server) gin.HandlerFunc {
 	}
 }
 
-func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
+func GinContextToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxGinContexKey, c)
 		c.Request = c.Request.WithContext(ctx)
@@ -101,7 +100,7 @@ func GinContextToContextMiddleware(server *Server) gin.HandlerFunc {
 	}
 }
 
-func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
+func FirebaseClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseClientKey, server.FirebaseClient)
 		c.Request = c.Request.WithContext(ctx)
@@ -109,7 +108,7 @@ func FirebaseClientToContextMiddleware(server *Server) gin.HandlerFunc {
 	}
 }
 
-func FirebaseDBClientToContextMiddleware(server *Server) gin.HandlerFunc {
+func FirebaseDBClientToContextMiddleware(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), middleware.CtxFirebaseDatabaseClientKey, server.FirebaseDatabaseClient)
 		c.Request = c.Request.WithContext(ctx)
@@ -152,7 +151,7 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 
 }
 
-func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(*http.Response) error {
+func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 	return func(r *http.Response) error {
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
@@ -169,70 +168,12 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 			tokenState = tokenSaved.(token.Token).GetTokenState()
 		}
 
-		var redisKey string
-		switch path := r.Request.URL.Path; {
-		// TODO refactor condition
-		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
-			// truncate the content if the user is not a member and the post falls into a member only category
-			if tokenState == token.OK {
-				// TODO refactor redis cache code
-				redisKey = fmt.Sprintf("%s.%s.%s.%s", "mm-apigateway", "post", "member", c.Request.RequestURI)
-			} else {
-				// TODO refactor redis cache code
-				redisKey = fmt.Sprintf("%s.%s.%s.%s", "mm-apigateway", "post", "notmember", c.Request.RequestURI)
-
-				type Category struct {
-					IsMemberOnly *bool `json:"isMemberOnly,omitempty"`
-				}
-
-				type ItemContent struct {
-					APIData []interface{} `json:"apiData"`
-				}
-				type Item struct {
-					Content    ItemContent `json:"content"`
-					Categories []Category  `json:"categories"`
-				}
-				type Resp struct {
-					Items []Item `json:"_items"`
-				}
-
-				var items Resp
-				err = json.Unmarshal(body, &items)
-				if err != nil {
-					log.Errorf("Unmarshal post encountered error: %v", err)
-					return err
-				}
-
-				// modify body if the item falls into a "member only" category
-				for i, item := range items.Items {
-					for _, category := range item.Categories {
-						if category.IsMemberOnly != nil && *category.IsMemberOnly {
-							truncatedAPIData := item.Content.APIData[0:3]
-							body, err = sjson.SetBytes(body, fmt.Sprintf("_items.%d.content.apiData", i), truncatedAPIData)
-							if err != nil {
-								return err
-							}
-							break
-						}
-					}
-				}
-			}
-
-			// TODO refactor redis cache code
-			err = rdb.Set(context.TODO(), redisKey, body, time.Duration(cacheTTL)*time.Second).Err()
-			if err != nil {
-				log.Warnf("setting redis cache(%s) encountered error: %v", redisKey, err)
-			}
-		default:
-		}
-
 		b, err := json.Marshal(Reply{
 			TokenState: tokenState,
 			Data:       json.RawMessage(body),
 		})
 
 		if err != nil {
-			log.Errorf("Marshalling reply encountered error: %v", err)
 			return err
 		}
 
@@ -243,7 +184,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 	}
 }
 
-func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string, rdb Rediser, cacheTTL int) func(c *gin.Context) {
+func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string) func(c *gin.Context) {
 	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
 		if strings.HasSuffix(pathBaseToStrip, "/") {
@@ -271,45 +212,7 @@ func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string, rdb Redi
 	reverseProxy := &httputil.ReverseProxy{Director: director}
 
 	return func(c *gin.Context) {
-		// TODO refactor modification and cache code
-		var tokenState string
-
-		tokenSaved, exist := c.Get(middleware.GCtxTokenKey)
-		if !exist {
-			tokenState = "No Bearer token available"
-		} else {
-			tokenState = tokenSaved.(token.Token).GetTokenState()
-		}
-
-		switch path := c.Request.URL.Path; {
-		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
-			// Try to read cache first
-			var key string
-			if tokenState != token.OK {
-				key = fmt.Sprintf("%s.%s.%s.%s", "mm-apigateway", "post", "notmember", c.Request.RequestURI)
-			} else {
-				key = fmt.Sprintf("%s.%s.%s.%s", "mm-apigateway", "post", "member", c.Request.RequestURI)
-			}
-
-			cmd := rdb.Get(context.TODO(), key)
-			// cache doesn't exist, do fetch reverse proxy
-			if cmd == nil {
-				break
-			}
-			body, err := cmd.Bytes()
-			// cache can't be understood, do fetch reverse proxy
-			if err != nil {
-				break
-			}
-
-			c.AbortWithStatusJSON(http.StatusOK, Reply{
-				TokenState: tokenState,
-				Data:       json.RawMessage(body),
-			})
-			return
-		}
-
-		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c, rdb, cacheTTL)
+		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c)
 		reverseProxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
@@ -327,7 +230,7 @@ type ErrorReply struct {
 	Data   interface{} `json:"data,omitempty"`
 }
 
-func SetHealthRoute(server *Server) error {
+func SetHealthRoute(server *server.Server) error {
 
 	if server.Conf == nil || server.FirebaseApp == nil {
 		return errors.New("config or firebase app is nil")
@@ -342,7 +245,7 @@ func SetHealthRoute(server *Server) error {
 }
 
 // SetRoute sets the routing for the gin engine
-func SetRoute(server *Server) error {
+func SetRoute(server *server.Server) error {
 	apiRouter := server.Engine.Group("/api")
 
 	// Public API
@@ -368,6 +271,7 @@ func SetRoute(server *Server) error {
 	v1TokenAuthenticatedWithFirebaseRouter := v1Router.Use(AuthenticateIDToken(server), GinContextToContextMiddleware(server), FirebaseClientToContextMiddleware(server), FirebaseDBClientToContextMiddleware(server))
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 		Conf:       *server.Conf,
+		Server:     server,
 		UserSrvURL: server.Conf.ServiceEndpoints.UserGraphQL,
 		// Token:      server.UserSrvToken,
 		// TODO Temp workaround
@@ -396,7 +300,7 @@ func SetRoute(server *Server) error {
 		return err
 	}
 
-	v0tokenStateRouter.Any("/*wildcard", NewSingleHostReverseProxy(proxyURL, v0Router.BasePath(), server.Rdb, server.Conf.RedisService.Cache.TTL))
+	v0tokenStateRouter.Any("/*wildcard", NewSingleHostReverseProxy(proxyURL, v0Router.BasePath()))
 
 	return nil
 }

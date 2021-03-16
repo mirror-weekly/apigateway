@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	apigateway "github.com/mirror-media/mm-apigateway"
 	"github.com/mirror-media/mm-apigateway/config"
 	"github.com/mirror-media/mm-apigateway/server"
 	log "github.com/sirupsen/logrus"
@@ -22,7 +23,7 @@ func main() {
 	// name of config file (without extension)
 	viper.SetConfigName("config")
 	// optionally look for config in the working directory
-	viper.AddConfigPath("./configs")
+	viper.AddConfigPath(".")
 	// Find and read the config file
 	err := viper.ReadInConfig()
 	// Handle errors reading the config file
@@ -36,33 +37,33 @@ func main() {
 		log.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	srv, err := server.NewServer(cfg)
+	server, err := server.NewServer(cfg)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create new server")
 		log.Fatal(err)
 	}
-	err = server.SetHealthRoute(srv)
+	err = apigateway.SetHealthRoute(server)
 	if err != nil {
 		log.Fatalf("error setting up health route: %v", err)
 	}
 
-	err = server.SetRoute(srv)
+	err = apigateway.SetRoute(server)
 	if err != nil {
 		log.Fatalf("error setting up route: %v", err)
 	}
 
-	httpSRV := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", srv.Conf.Address, srv.Conf.Port),
-		Handler: srv.Engine,
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", server.Conf.Address, server.Conf.Port),
+		Handler: server.Engine,
 	}
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 
 	go func() {
-		log.Infof("server listening to %s", httpSRV.Addr)
-		if err = httpSRV.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			err = errors.Wrap(shutdown(httpSRV, nil), err.Error())
+		log.Infof("server listening to %s", srv.Addr)
+		if err = srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			err = errors.Wrap(shutdown(srv, nil), err.Error())
 			log.Fatalf("listen: %s\n", err)
 		} else if err != nil {
 			err = errors.Wrap(shutdown(nil, nil), err.Error())
@@ -79,7 +80,7 @@ func main() {
 	<-quit
 	log.Println("Shutting down server...")
 
-	if err := shutdown(httpSRV, nil); err != nil {
+	if err := shutdown(srv, nil); err != nil {
 		log.Fatalf("Server forced to shutdown:", err)
 	}
 	os.Exit(0)
