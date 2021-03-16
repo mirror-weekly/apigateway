@@ -1,4 +1,4 @@
-FROM golang:1.15.6-alpine3.12 AS build
+FROM golang:1.15-alpine AS build
 
 WORKDIR /api-gateway
 
@@ -8,7 +8,7 @@ RUN apk add --update --no-cache make && \
     go get ./... && \
     make all
 
-FROM alpine:3.12
+FROM alpine:latest
 
 WORKDIR /api-gateway
 
