@@ -46,9 +46,9 @@ func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 		// X-Authorization is a workaround for a issue that sometime the value of Authorization is "Bearer undefined" for no obvious reasons
 		if authHeader = c.GetHeader("X-Authorization"); authHeader == "" {
 			authHeader = c.GetHeader("Authorization")
-			logger.Infof("X-authHeader is empty. get auth:%s", authHeader)
+			logger.Debugf("X-authHeader is empty. get auth:%s", authHeader)
 		} else {
-			logger.Infof("X-authHeader is found. x-auth:%s", authHeader)
+			logger.Debugf("X-authHeader is found. x-auth:%s", authHeader)
 		}
 		firebaseClient := server.FirebaseClient
 		token, err := token.NewFirebaseToken(authHeader, firebaseClient, c.Request.RequestURI)
@@ -173,14 +173,14 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		"uri": uri,
 	})
 	logger.Logger.SetLevel(log.DebugLevel)
-	logger.Info("ModifyReverseProxyResponse logger is created")
-	logger.Info("inside ModifyReverseProxyResponse")
+	logger.Debug("ModifyReverseProxyResponse logger is created")
+	logger.Debug("inside ModifyReverseProxyResponse")
 	return func(r *http.Response) error {
 		logger := log.WithFields(log.Fields{
 			"uri": uri,
 		})
 		logger.Logger.SetLevel(log.DebugLevel)
-		logger.Info("func ModifyReverseProxyResponse logger is created")
+		logger.Debug("func ModifyReverseProxyResponse logger is created")
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
 		if err != nil {
@@ -189,7 +189,7 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 
 		var tokenState string
 
-		logger.Info("getting tokenSaved")
+		logger.Debug("getting tokenSaved")
 		tokenSaved, exist := c.Get(middleware.GCtxTokenKey)
 		if !exist {
 			tokenState = "No Bearer token available"
@@ -199,18 +199,18 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 
 		token, ok := tokenSaved.(token.Token)
 		if !ok {
-			logger.Info("tokenSaved cannot be converted to token.Token")
+			logger.Debug("tokenSaved cannot be converted to token.Token")
 		} else {
-			logger.Infof("token:%+v", token)
+			logger.Debugf("token:%+v", token)
 		}
 
 		s, err := token.GetTokenString()
 		if err != nil {
-			logger.Info(err)
+			logger.Debug(err)
 		}
 
-		logger.Infof("saved token string is:%s", s)
-		logger.Infof("final token state is:%s", tokenState)
+		logger.Debugf("saved token string is:%s", s)
+		logger.Debugf("final token state is:%s", tokenState)
 
 		b, err := json.Marshal(Reply{
 			TokenState: tokenState,
@@ -220,7 +220,7 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		if err != nil {
 			return err
 		}
-		logger.Infof("Content-Length is:%s", strconv.Itoa(len(b)))
+		logger.Debugf("Content-Length is:%s", strconv.Itoa(len(b)))
 
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
 		r.ContentLength = int64(len(b))
