@@ -256,9 +256,9 @@ func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string) func(c *
 		}
 	}
 
-	reverseProxy := &httputil.ReverseProxy{Director: director}
-
 	return func(c *gin.Context) {
+
+		reverseProxy := httputil.ReverseProxy{Director: director}
 		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c)
 		reverseProxy.ServeHTTP(c.Writer, c.Request)
 	}
