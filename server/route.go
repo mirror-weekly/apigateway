@@ -267,9 +267,6 @@ func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string, rdb Redi
 			req.Header.Set("User-Agent", "")
 		}
 	}
-
-	reverseProxy := &httputil.ReverseProxy{Director: director}
-
 	return func(c *gin.Context) {
 		// TODO refactor modification and cache code
 		var tokenState string
@@ -309,7 +306,8 @@ func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string, rdb Redi
 			return
 		}
 
-		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c, rdb, cacheTTL)
+		reverseProxy := httputil.ReverseProxy{Director: director}
+		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c)
 		reverseProxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
