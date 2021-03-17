@@ -1,4 +1,4 @@
-FROM golang:1.15-alpine AS build
+FROM golang:1.15-buster AS build
 
 WORKDIR /api-gateway
 
@@ -8,7 +8,7 @@ RUN apk add --update --no-cache make && \
     go get ./... && \
     make all
 
-FROM alpine:latest
+FROM debian:buster
 
 WORKDIR /api-gateway
 
