@@ -167,7 +167,9 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 
 func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 
-	uri := c.Request.RequestURI
+	cc := c.Copy()
+
+	uri := cc.Request.RequestURI
 
 	logger := log.WithFields(log.Fields{
 		"uri": uri,
@@ -190,7 +192,7 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		var tokenState string
 
 		logger.Info("getting tokenSaved")
-		tokenSaved, exist := c.Get(middleware.GCtxTokenKey)
+		tokenSaved, exist := cc.Get(middleware.GCtxTokenKey)
 		if !exist {
 			tokenState = "No Bearer token available"
 		} else {
