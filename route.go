@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -29,26 +28,20 @@ import (
 	"github.com/mirror-media/mm-apigateway/graph/generated"
 )
 
-func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
-
 // GetIDTokenOnly is a middleware to construct the token.Token interface
 func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := log.WithFields(log.Fields{
 			"path": c.FullPath(),
-			"uri":  c.Request.RequestURI,
 		})
 		// Create a Token Instance
 		var authHeader string
 		// X-Authorization is a workaround for a issue that sometime the value of Authorization is "Bearer undefined" for no obvious reasons
 		if authHeader = c.GetHeader("X-Authorization"); authHeader == "" {
 			authHeader = c.GetHeader("Authorization")
-			logger.Debugf("X-authHeader is empty. get auth:%s", authHeader)
+			log.Debugf("X-authHeader is empty. get auth:%s", authHeader)
 		} else {
-			logger.Debugf("X-authHeader is found. x-auth:%s", authHeader)
+			log.Debugf("X-authHeader is found. x-auth:%s", authHeader)
 		}
 		firebaseClient := server.FirebaseClient
 		token, err := token.NewFirebaseToken(authHeader, firebaseClient)
