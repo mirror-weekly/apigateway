@@ -171,9 +171,14 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		"uri": c.Request.RequestURI,
 	})
 	logger.Logger.SetLevel(log.DebugLevel)
-	logger.Debug("logger is created")
+	logger.Debug("ModifyReverseProxyResponse logger is created")
+	logger.Debug("inside ModifyReverseProxyResponse")
 	return func(r *http.Response) error {
-		logger.Debug("inside ModifyReverseProxyResponse")
+		logger := log.WithFields(log.Fields{
+			"uri": c.Request.RequestURI,
+		})
+		logger.Logger.SetLevel(log.DebugLevel)
+		logger.Debug("func ModifyReverseProxyResponse logger is created")
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
 		if err != nil {
