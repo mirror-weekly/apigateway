@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"firebase.google.com/go/v4/auth"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type FirebaseToken struct {
@@ -35,7 +33,6 @@ func (ft *FirebaseToken) GetTokenString() (string, error) {
 }
 
 func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
-	log.Debugf("ExecuteTokenStateUpdate...(token:%s)", *ft.tokenString)
 	if ft.tokenString == nil {
 		return errors.New("token is nil")
 	}
@@ -43,10 +40,8 @@ func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
 	go func() {
 		defer ft.tokenState.Unlock()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		log.Debugf("VerifyIDTokenAndCheckRevoked...(token:%s)", *ft.tokenString)
 		defer cancel()
 		_, err := ft.firebaseClient.VerifyIDTokenAndCheckRevoked(ctx, *ft.tokenString)
-		log.Debugf("VerifyIDTokenAndCheckRevoked Result...(token:%s)(err:%v)", *ft.tokenString, err)
 		if err != nil {
 			ft.tokenState.setState(err.Error())
 			return
@@ -74,21 +69,16 @@ func NewFirebaseToken(authHeader *string, client *auth.Client) (Token, error) {
 	}
 	const BearerSchema = "Bearer "
 	var state, tokenString *string
-	log.Debugf("NewFirebaseToken...(authHeader:%s)", *authHeader)
 	if authHeader == nil || *authHeader == "" {
 		s := "authorization header is not provided"
 		state = &s
-		log.Debugf("state is:%s)", state)
 	} else if !strings.HasPrefix(*authHeader, BearerSchema) {
 		s := "Not a Bearer token"
 		state = &s
-		log.Debugf("state is:%s)", state)
 	} else {
 		s := (*authHeader)[len(BearerSchema):]
-		log.Debugf("trimming header :%s)", s)
 		tokenString = &s
 	}
-	log.Debugf("final tokenString...(tokenString:%s)", tokenString)
 	firebaseToken := &FirebaseToken{
 		firebaseClient: client,
 		tokenString:    tokenString,
