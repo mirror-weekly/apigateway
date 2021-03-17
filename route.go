@@ -166,10 +166,6 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 }
 
 func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
-
-	logger := log.WithFields(log.Fields{
-		"uri": c.Request.RequestURI,
-	})
 	return func(r *http.Response) error {
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
@@ -185,21 +181,6 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		} else {
 			tokenState = tokenSaved.(token.Token).GetTokenState()
 		}
-
-		token, ok := tokenSaved.(token.Token)
-		if !ok {
-			logger.Debug("tokenSaved cannot be converted to token.Token")
-		} else {
-			logger.Debugf("token:%+v", token)
-		}
-
-		s, err := token.GetTokenString()
-		if err != nil {
-			logger.Debug(err)
-		}
-
-		logger.Debugf("saved token string is:%s", s)
-		logger.Debugf("final token state is:%s", tokenState)
 
 		b, err := json.Marshal(Reply{
 			TokenState: tokenState,
