@@ -75,27 +75,31 @@ func (ft *FirebaseToken) GetTokenState() string {
 }
 
 // NewFirebaseToken creates a token and excute the token state update procedure
-func NewFirebaseToken(authHeader string, client *auth.Client) (Token, error) {
+func NewFirebaseToken(authHeader string, client *auth.Client, uri string) (Token, error) {
+
+	logger := log.WithFields(log.Fields{
+		"uri": uri,
+	})
 	if client == nil {
 		return nil, errors.New("client cannot be nil")
 	}
 	const BearerSchema = "Bearer "
 	var state, tokenString *string
-	log.Debugf("NewFirebaseToken...(authHeader:%s)", authHeader)
+	logger.Debugf("NewFirebaseToken...(authHeader:%s)", authHeader)
 	if authHeader == "" {
 		s := "authorization header is not provided"
 		state = &s
-		log.Debugf("state is:%s)", state)
+		logger.Debugf("state is:%s)", state)
 	} else if !strings.HasPrefix(authHeader, BearerSchema) {
 		s := "Not a Bearer token"
 		state = &s
-		log.Debugf("state is:%s)", state)
+		logger.Debugf("state is:%s)", state)
 	} else {
 		s := (authHeader)[len(BearerSchema):]
-		log.Debugf("trimming header :%s)", s)
+		logger.Debugf("trimming header :%s)", s)
 		tokenString = &s
 	}
-	log.Debugf("final tokenString...(tokenString:%s)", tokenString)
+	logger.Debugf("final tokenString...(tokenString:%s)", tokenString)
 	firebaseToken := &FirebaseToken{
 		firebaseClient: client,
 		tokenString:    tokenString,
