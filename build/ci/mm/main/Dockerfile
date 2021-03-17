@@ -5,7 +5,7 @@ WORKDIR /api-gateway
 COPY . .
 
 RUN apt update && \
-    apt install build-essential -y && \
+    apt install build-essential && \
     go get ./... && \
     make all
 
