@@ -3,7 +3,6 @@ package token
 import (
 	"context"
 	"errors"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -12,11 +11,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
-
-func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
 
 type FirebaseToken struct {
 	tokenString    *string
