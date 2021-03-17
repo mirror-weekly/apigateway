@@ -170,7 +170,10 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 	logger := log.WithFields(log.Fields{
 		"uri": c.Request.RequestURI,
 	})
+	logger.Logger.SetLevel(log.DebugLevel)
+	logger.Debug("logger is created")
 	return func(r *http.Response) error {
+		logger.Debug("inside ModifyReverseProxyResponse")
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
 		if err != nil {
@@ -179,6 +182,7 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 
 		var tokenState string
 
+		logger.Debug("getting tokenSaved")
 		tokenSaved, exist := c.Get(middleware.GCtxTokenKey)
 		if !exist {
 			tokenState = "No Bearer token available"
