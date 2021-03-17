@@ -4,7 +4,8 @@ WORKDIR /api-gateway
 
 COPY . .
 
-RUN apk add --update --no-cache make && \
+RUN apt update && \
+    apt install build-essential && \
     go get ./... && \
     make all
 
