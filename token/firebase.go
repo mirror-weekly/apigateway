@@ -66,8 +66,8 @@ func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
 
 // GetTokenState will automatically update state if cached state is nil
 func (ft *FirebaseToken) GetTokenState() string {
-	ft.tokenState.Lock()
-	defer ft.tokenState.Unlock()
+	// ft.tokenState.Lock()
+	// defer ft.tokenState.Unlock()
 	if ft.tokenState.state == nil {
 		if err := ft.ExecuteTokenStateUpdate(); err != nil {
 			log.Info(err)
@@ -114,10 +114,10 @@ func NewFirebaseToken(authHeader string, client *auth.Client, uri string) (Token
 		},
 		uri: uri,
 	}
-	firebaseToken.tokenState.Lock()
-	go func() {
-		defer firebaseToken.tokenState.Unlock()
-		firebaseToken.ExecuteTokenStateUpdate()
-	}()
+	// firebaseToken.tokenState.Lock()
+	// go func() {
+	// defer firebaseToken.tokenState.Unlock()
+	firebaseToken.ExecuteTokenStateUpdate()
+	// }()
 	return firebaseToken, nil
 }
