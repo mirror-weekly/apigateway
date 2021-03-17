@@ -51,7 +51,7 @@ func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 			logger.Debugf("X-authHeader is found. x-auth:%s", authHeader)
 		}
 		firebaseClient := server.FirebaseClient
-		token, err := token.NewFirebaseToken(authHeader, firebaseClient, c.Request.RequestURI)
+		token, err := token.NewFirebaseToken(authHeader, firebaseClient)
 		if err != nil {
 			logger.Info(err)
 			c.Next()
