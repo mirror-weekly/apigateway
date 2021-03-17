@@ -167,17 +167,15 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 
 func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 
-	uri := c.Request.RequestURI
-
 	logger := log.WithFields(log.Fields{
-		"uri": uri,
+		"uri": c.Request.RequestURI,
 	})
 	logger.Logger.SetLevel(log.DebugLevel)
 	logger.Debug("ModifyReverseProxyResponse logger is created")
 	logger.Debug("inside ModifyReverseProxyResponse")
 	return func(r *http.Response) error {
 		logger := log.WithFields(log.Fields{
-			"uri": uri,
+			"uri": c.Request.RequestURI,
 		})
 		logger.Logger.SetLevel(log.DebugLevel)
 		logger.Debug("func ModifyReverseProxyResponse logger is created")
@@ -220,7 +218,6 @@ func ModifyReverseProxyResponse(c *gin.Context) func(*http.Response) error {
 		if err != nil {
 			return err
 		}
-		logger.Debugf("Content-Length is:%s", strconv.Itoa(len(b)))
 
 		r.Body = ioutil.NopCloser(bytes.NewReader(b))
 		r.ContentLength = int64(len(b))
