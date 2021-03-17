@@ -22,6 +22,7 @@ type FirebaseToken struct {
 	tokenString    *string
 	tokenState     firebaseTokenState
 	firebaseClient *auth.Client
+	uri            string
 }
 
 type firebaseTokenState struct {
@@ -41,16 +42,20 @@ func (ft *FirebaseToken) GetTokenString() (string, error) {
 }
 
 func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
+
+	logger := log.WithFields(log.Fields{
+		"uri": ft.uri,
+	})
 	if ft.tokenString == nil {
 		return errors.New("token is nil")
 	}
-	log.Debugf("ExecuteTokenStateUpdate...(token:%s)", *ft.tokenString)
+	logger.Debugf("ExecuteTokenStateUpdate...(token:%s)", *ft.tokenString)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	log.Debugf("VerifyIDTokenAndCheckRevoked...(token:%s)", *ft.tokenString)
+	logger.Debugf("VerifyIDTokenAndCheckRevoked...(token:%s)", *ft.tokenString)
 	defer cancel()
 	_, err := ft.firebaseClient.VerifyIDTokenAndCheckRevoked(ctx, *ft.tokenString)
-	log.Debugf("VerifyIDTokenAndCheckRevoked Result...(token:%s)(err:%v)", *ft.tokenString, err)
+	logger.Debugf("VerifyIDTokenAndCheckRevoked Result...(token:%s)(err:%v)", *ft.tokenString, err)
 	if err != nil {
 		ft.tokenState.setState(err.Error())
 		return err
@@ -96,13 +101,18 @@ func NewFirebaseToken(authHeader string, client *auth.Client, uri string) (Token
 		logger.Debugf("trimming header :%s)", t)
 		tokenString = &t
 	}
-	logger.Debugf("final tokenString...(tokenString:%s)", tokenString)
+	if tokenString != nil {
+		logger.Debugf("final tokenString...(tokenString:%s)", *tokenString)
+	} else {
+		logger.Debug("final tokenString.is nil")
+	}
 	firebaseToken := &FirebaseToken{
 		firebaseClient: client,
 		tokenString:    tokenString,
 		tokenState: firebaseTokenState{
 			state: state,
 		},
+		uri: uri,
 	}
 	firebaseToken.tokenState.Lock()
 	go func() {
