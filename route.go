@@ -39,6 +39,9 @@ func GetIDTokenOnly(server *server.Server) gin.HandlerFunc {
 		// X-Authorization is a workaround for a issue that sometime the value of Authorization is "Bearer undefined" for no obvious reasons
 		if authHeader = c.GetHeader("Authorization"); authHeader == "" {
 			authHeader = c.GetHeader("X-Authorization")
+			log.Debugf("authHeader is empty. get x-auth:%s", authHeader)
+		} else {
+			log.Debugf("authHeader is found. auth:%s", authHeader)
 		}
 		firebaseClient := server.FirebaseClient
 		token, err := token.NewFirebaseToken(authHeader, firebaseClient)

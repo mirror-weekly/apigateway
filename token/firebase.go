@@ -41,10 +41,11 @@ func (ft *FirebaseToken) GetTokenString() (string, error) {
 }
 
 func (ft *FirebaseToken) ExecuteTokenStateUpdate() error {
-	log.Debugf("ExecuteTokenStateUpdate...(token:%s)", *ft.tokenString)
 	if ft.tokenString == nil {
 		return errors.New("token is nil")
 	}
+	log.Debugf("ExecuteTokenStateUpdate...(token:%s)", *ft.tokenString)
+
 	ft.tokenState.Lock()
 	go func() {
 		defer ft.tokenState.Unlock()
