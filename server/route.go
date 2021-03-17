@@ -307,7 +307,7 @@ func NewSingleHostReverseProxy(target *url.URL, pathBaseToStrip string, rdb Redi
 		}
 
 		reverseProxy := httputil.ReverseProxy{Director: director}
-		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c)
+		reverseProxy.ModifyResponse = ModifyReverseProxyResponse(c, rdb, cacheTTL)
 		reverseProxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
