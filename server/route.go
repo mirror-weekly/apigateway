@@ -38,7 +38,7 @@ func GetIDTokenOnly(server *Server) gin.HandlerFunc {
 		// Create a Token Instance
 		authHeader := c.GetHeader("Authorization")
 		firebaseClient := server.FirebaseClient
-		token, err := token.NewFirebaseToken(&authHeader, firebaseClient)
+		token, err := token.NewFirebaseToken(authHeader, firebaseClient)
 		if err != nil {
 			logger.Info(err)
 			c.Next()
