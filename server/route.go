@@ -173,6 +173,29 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 		switch path := r.Request.URL.Path; {
 		// TODO refactor condition
 		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
+
+			type Category struct {
+				IsMemberOnly *bool `json:"isMemberOnly,omitempty"`
+			}
+
+			type ItemContent struct {
+				APIData []interface{} `json:"apiData"`
+			}
+			type Item struct {
+				Content    ItemContent `json:"content"`
+				Categories []Category  `json:"categories"`
+			}
+			type Resp struct {
+				Items []Item `json:"_items"`
+			}
+
+			var items Resp
+			err = json.Unmarshal(body, &items)
+			if err != nil {
+				log.Errorf("Unmarshal post encountered error: %v", err)
+				return err
+			}
+
 			// truncate the content if the user is not a member and the post falls into a member only category
 			if tokenState == token.OK {
 				// TODO refactor redis cache code
@@ -180,28 +203,6 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 			} else {
 				// TODO refactor redis cache code
 				redisKey = fmt.Sprintf("%s.%s.%s.%s", "mm-apigateway", "post", "notmember", c.Request.RequestURI)
-
-				type Category struct {
-					IsMemberOnly *bool `json:"isMemberOnly,omitempty"`
-				}
-
-				type ItemContent struct {
-					APIData []interface{} `json:"apiData"`
-				}
-				type Item struct {
-					Content    ItemContent `json:"content"`
-					Categories []Category  `json:"categories"`
-				}
-				type Resp struct {
-					Items []Item `json:"_items"`
-				}
-
-				var items Resp
-				err = json.Unmarshal(body, &items)
-				if err != nil {
-					log.Errorf("Unmarshal post encountered error: %v", err)
-					return err
-				}
 
 				// modify body if the item falls into a "member only" category
 				for i, item := range items.Items {
@@ -218,6 +219,13 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 				}
 			}
 
+			// remove html because only apidata is useful and html contains full content
+			for i, _ := range items.Items {
+				body, err = sjson.DeleteBytes(body, fmt.Sprintf("_items.%d.content.html", i))
+				if err != nil {
+					return err
+				}
+			}
 			// TODO refactor redis cache code
 			err = rdb.Set(context.TODO(), redisKey, body, time.Duration(cacheTTL)*time.Second).Err()
 			if err != nil {
