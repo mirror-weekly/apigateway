@@ -153,10 +153,14 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 }
 
 func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(*http.Response) error {
+	logger := log.WithFields(log.Fields{
+		"path": c.FullPath(),
+	})
 	return func(r *http.Response) error {
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
 		if err != nil {
+			logger.Errorf("encounter error when reading proxy response:", err)
 			return err
 		}
 
@@ -173,6 +177,29 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 		switch path := r.Request.URL.Path; {
 		// TODO refactor condition
 		case strings.HasSuffix(path, "/getposts") || strings.HasSuffix(path, "/posts") || strings.HasSuffix(path, "/post"):
+
+			type Category struct {
+				IsMemberOnly *bool `json:"isMemberOnly,omitempty"`
+			}
+
+			type ItemContent struct {
+				APIData []interface{} `json:"apiData"`
+			}
+			type Item struct {
+				Content    ItemContent `json:"content"`
+				Categories []Category  `json:"categories"`
+			}
+			type Resp struct {
+				Items []Item `json:"_items"`
+			}
+
+			var items Resp
+			err = json.Unmarshal(body, &items)
+			if err != nil {
+				logger.Errorf("Unmarshal post encountered error: %v", err)
+				return err
+			}
+
 			// truncate the content if the user is not a member and the post falls into a member only category
 			if tokenState == token.OK {
 				// TODO refactor redis cache code
@@ -181,28 +208,6 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 				// TODO refactor redis cache code
 				redisKey = fmt.Sprintf("%s.%s.%s.%s", "mm-apigateway", "post", "notmember", c.Request.RequestURI)
 
-				type Category struct {
-					IsMemberOnly *bool `json:"isMemberOnly,omitempty"`
-				}
-
-				type ItemContent struct {
-					APIData []interface{} `json:"apiData"`
-				}
-				type Item struct {
-					Content    ItemContent `json:"content"`
-					Categories []Category  `json:"categories"`
-				}
-				type Resp struct {
-					Items []Item `json:"_items"`
-				}
-
-				var items Resp
-				err = json.Unmarshal(body, &items)
-				if err != nil {
-					log.Errorf("Unmarshal post encountered error: %v", err)
-					return err
-				}
-
 				// modify body if the item falls into a "member only" category
 				for i, item := range items.Items {
 					for _, category := range item.Categories {
@@ -210,6 +215,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 							truncatedAPIData := item.Content.APIData[0:3]
 							body, err = sjson.SetBytes(body, fmt.Sprintf("_items.%d.content.apiData", i), truncatedAPIData)
 							if err != nil {
+								logger.Errorf("encounter error when truncating apiData:", err)
 								return err
 							}
 							break
@@ -218,10 +224,18 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 				}
 			}
 
+			// remove html because only apidata is useful and html contains full content
+			for i, _ := range items.Items {
+				body, err = sjson.DeleteBytes(body, fmt.Sprintf("_items.%d.content.html", i))
+				if err != nil {
+					logger.Errorf("encounter error when deleting html:", err)
+					return err
+				}
+			}
 			// TODO refactor redis cache code
 			err = rdb.Set(context.TODO(), redisKey, body, time.Duration(cacheTTL)*time.Second).Err()
 			if err != nil {
-				log.Warnf("setting redis cache(%s) encountered error: %v", redisKey, err)
+				logger.Warnf("setting redis cache(%s) encountered error: %v", redisKey, err)
 			}
 		default:
 		}
@@ -232,7 +246,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 		})
 
 		if err != nil {
-			log.Errorf("Marshalling reply encountered error: %v", err)
+			logger.Errorf("Marshalling reply encountered error: %v", err)
 			return err
 		}
 
