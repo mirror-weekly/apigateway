@@ -160,6 +160,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
 		if err != nil {
+			logger.Errorf("encounter error when reading proxy response:", err)
 			return err
 		}
 
@@ -214,6 +215,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 							truncatedAPIData := item.Content.APIData[0:3]
 							body, err = sjson.SetBytes(body, fmt.Sprintf("_items.%d.content.apiData", i), truncatedAPIData)
 							if err != nil {
+								logger.Errorf("encounter error when truncating apiData:", err)
 								return err
 							}
 							break
@@ -226,7 +228,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 			for i, _ := range items.Items {
 				body, err = sjson.DeleteBytes(body, fmt.Sprintf("_items.%d.content.html", i))
 				if err != nil {
-
+					logger.Errorf("encounter error when deleting html:", err)
 					return err
 				}
 			}
