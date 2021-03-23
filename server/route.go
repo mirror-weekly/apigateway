@@ -153,6 +153,9 @@ func joinURLPath(a, b *url.URL) (path, rawpath string) {
 }
 
 func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(*http.Response) error {
+	logger := log.WithFields(log.Fields{
+		"path": c.FullPath(),
+	})
 	return func(r *http.Response) error {
 		body, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
@@ -192,7 +195,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 			var items Resp
 			err = json.Unmarshal(body, &items)
 			if err != nil {
-				log.Errorf("Unmarshal post encountered error: %v", err)
+				logger.Errorf("Unmarshal post encountered error: %v", err)
 				return err
 			}
 
@@ -223,13 +226,14 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 			for i, _ := range items.Items {
 				body, err = sjson.DeleteBytes(body, fmt.Sprintf("_items.%d.content.html", i))
 				if err != nil {
+
 					return err
 				}
 			}
 			// TODO refactor redis cache code
 			err = rdb.Set(context.TODO(), redisKey, body, time.Duration(cacheTTL)*time.Second).Err()
 			if err != nil {
-				log.Warnf("setting redis cache(%s) encountered error: %v", redisKey, err)
+				logger.Warnf("setting redis cache(%s) encountered error: %v", redisKey, err)
 			}
 		default:
 		}
@@ -240,7 +244,7 @@ func ModifyReverseProxyResponse(c *gin.Context, rdb Rediser, cacheTTL int) func(
 		})
 
 		if err != nil {
-			log.Errorf("Marshalling reply encountered error: %v", err)
+			logger.Errorf("Marshalling reply encountered error: %v", err)
 			return err
 		}
 
