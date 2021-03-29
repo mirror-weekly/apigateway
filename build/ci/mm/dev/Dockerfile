@@ -1,4 +1,4 @@
-FROM golang:1.15-alpine AS build
+FROM golang:1.16-alpine AS build
 
 WORKDIR /api-gateway
 
@@ -13,8 +13,7 @@ FROM alpine:latest
 WORKDIR /api-gateway
 
 COPY --from=build /api-gateway/bin/ .
-COPY firebaseCredential.json .
-COPY config.yaml .
+COPY configs ./configs
 
 EXPOSE 8080
 CMD ["./apigateway"]

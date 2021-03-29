@@ -138,7 +138,7 @@ func (r *mutationResolver) DeleteMember(ctx context.Context, firebaseID string) 
 	// delete Firebase user and request to disable member in DB concurrently
 	// use context.Background() so that the "delete member" can finish without interuption
 	go func() {
-		err = member.Delete(context.Background(), r.Server, client, dbClient, firebaseID)
+		err = member.Delete(context.Background(), r.Conf, client, dbClient, firebaseID)
 		if err != nil {
 			err = errors.WithMessagef(err, "Failed to delete Firebase User(%s) or publish to delete the member", firebaseID)
 			log.Error(err)
