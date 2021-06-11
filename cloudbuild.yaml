@@ -5,19 +5,19 @@ steps:
       - repos
       - clone
       - configs
-      - gcr_configs
+      - /workspace/gcr_configs
+  - name: bash
+    args: ["ls", "./"]
   - name: bash
     args:
       - cp
-      - ./gcr_configs/mirror-media/mm-apigateway/$BRANCH_NAME/config.yaml
+      - /workspace/gcr_configs/mirror-media/mm-apigateway/$BRANCH_NAME/config.yaml
       - ./configs/config.yaml
   - name: bash
     args:
       - cp
-      - ./gcr_configs/mirror-media/mm-apigateway/$BRANCH_NAME/firebaseCredential.json
+      - /workspace/gcr_configs/mirror-media/mm-apigateway/$BRANCH_NAME/firebaseCredential.json
       - ./configs/firebaseCredential.json
-  - name: bash
-    args: ["rm", "-rf", "gcr_configs"]
   - name: bash
     args:
       - cp
