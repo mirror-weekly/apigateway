@@ -7,7 +7,7 @@ steps:
       - configs
       - /workspace/gcr_configs
   - name: bash
-    args: ["ls", "./"]
+    args: ["mkdir", "./configs"]
   - name: bash
     args:
       - cp
